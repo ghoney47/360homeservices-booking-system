@@ -37,7 +37,7 @@ async def update_employee_endpoint(employee_update: EmployeeUpdate, employee_id:
 
 
 #assign booking(s)
-@router.patch("/{employee_id}/assign_jobs", response_model=EmployeeResponse)
+@router.patch("/{employee_id}/assign_bookings", response_model=EmployeeResponse)
 async def assign_bookings_endpoint(employee_id: int, booking_update: ConfirmedBookingUpdate, db: AsyncSession = Depends(get_db)):
 
     if not booking_update.assigned_employees:
@@ -49,8 +49,8 @@ async def assign_bookings_endpoint(employee_id: int, booking_update: ConfirmedBo
     return await ec.assign_bookings(employee_id, booking_update.assigned_employees, db)
 
 
-#delete booking(s)
-@router.patch("/{employee_id}/remove_jobs", response_model=EmployeeResponse)
+#remove booking(s)
+@router.patch("/{employee_id}/remove_bookings", response_model=EmployeeResponse)
 async def remove_bookings_endpoint(employee_id: int, booking_ids: list[int], db: AsyncSession = Depends(get_db)):
     return await ec.remove_bookings(employee_id, booking_ids, db)
 
