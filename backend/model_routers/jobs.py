@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
 from database import get_db
 from typing import Optional, List
-
 from models import Job
 from schemas import JobBase, JobCreate, JobResponse
 

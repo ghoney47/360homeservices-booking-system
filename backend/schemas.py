@@ -18,8 +18,6 @@ class JobCreate(JobBase):
     """
     Docstring for JobCreate
     """
-    
-
 
 class JobResponse(JobBase):
     """
@@ -36,22 +34,25 @@ class JobResponse(JobBase):
 class EmployeeBase(BaseModel):
     """
     Docstring for EmployeeBase
-    name: string of employee name
-    phone: string phone number
-    email: EmailStr email address
     """
-    name: str = Field(max_length=50)
-    phone_number: str = Field(max_length=15)
-    email: EmailStr = Field(max_length=50)
+    #TODO: keep?
+
 
 class EmployeeCreate(EmployeeBase):
     """
     Docstring for EmployeeCreate
     hire_date: date when the employee was hired
+    name: string of employee name
+    phone: string phone number
+    email: EmailStr email address
     """
     hire_date: date
+    name: str = Field(max_length=50)
+    phone_number: str = Field(max_length=15)
+    email: EmailStr = Field(max_length=50)
 
 
+    #TODO move to validators
     @field_validator('phone_number')
     def validate_phone_number(cls, num):
         """
@@ -74,6 +75,12 @@ class EmployeeCreate(EmployeeBase):
             return normalized_num
         else:
             raise ValueError("Invalid Phone Number")  
+        
+class EmployeeUpdate(EmployeeBase):
+    name: Optional[str] = None
+    #TODO continue here
+
+
 
             
 
@@ -87,8 +94,6 @@ class EmployeeResponse(EmployeeBase):
 
     class Config:
         from_attributes = True
-
-#TODO: figure out how we are going to deal with requesting the assigned jobs data -> maybe in org_service
 
 
 #Address Schemas
@@ -110,6 +115,8 @@ class AddressCreate(BaseModel):
     city: str = Field(max_length=20)
     state: str = Field(max_length=2)
     zip_code: str = Field(max_length=5)
+
+#TODO addressupdate
 
 class AddressResponse(BaseModel):
     """
@@ -144,6 +151,7 @@ class ClientCreate(ClientBase):
     """
     address_id: int
 
+    #TODO move to validators
     @field_validator('phone_number')
     def validate_phone_number(cls, num):
         """
@@ -165,7 +173,13 @@ class ClientCreate(ClientBase):
             normalized_num = phone.format_number(parsed_phone_num, phone.PhoneNumberFormat.E164)
             return normalized_num
         else:
-            raise ValueError("Invalid Phone Number")  
+            raise ValueError("Invalid Phone Number") 
+        
+
+        
+#TODO write client update schema
+
+
 
 
 class ClientResponse(ClientBase):
@@ -217,6 +231,8 @@ class ConfirmedBookingCreate(ConfirmedBookingBase):
             raise ValueError('There are duplicate employees')
         
         return employee_list
+    
+#TODO booking update
     
 
 class ConfirmedBookingResponse(ConfirmedBookingBase):
