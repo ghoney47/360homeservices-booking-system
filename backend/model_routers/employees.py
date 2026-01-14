@@ -4,7 +4,7 @@ from sqlalchemy import insert, select
 from database import get_db
 from typing import Optional, List
 from models import Employee
-from schemas import EmployeeCreate, EmployeeResponse, EmployeeUpdate
+from schemas import EmployeeCreate, EmployeeResponse, EmployeeUpdate, ConfirmedBookingUpdate
 from model_crud import employees_crud as ec
 
 #create router
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/employees", tags=["Employees"])
 
 
 #create
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=EmployeeResponse)
+@router.post("/create", status_code=status.HTTP_201_CREATED, response_model=EmployeeResponse)
 async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = Depends(get_db)):
     return await ec.create_employee(employee, db)
 
@@ -31,24 +31,31 @@ async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get
 
 
 #update
-@router.patch("/{employee_id}", response_model=EmployeeResponse)
+@router.patch("/{employee_id}/update", response_model=EmployeeResponse)
 async def update_employee_endpoint(employee_update: EmployeeUpdate, employee_id: int, db: AsyncSession = Depends(get_db)):
     return await ec.update_employee(employee_update, employee_id, db)
 
 
 #assign booking(s)
-@router.patch("/{employee_id}", response_model=EmployeeResponse)
-async def assign_bookings_endpoint(employee_id: int, booking_ids: list[int], db: AsyncSession = Depends(get_db)):
-    return await ec.assign_bookings(employee_id, booking_ids, db)
+@router.patch("/{employee_id}/assign_jobs", response_model=EmployeeResponse)
+async def assign_bookings_endpoint(employee_id: int, booking_update: ConfirmedBookingUpdate, db: AsyncSession = Depends(get_db)):
+
+    if not booking_update.assigned_employees:
+        raise HTTPException(
+            status_code=400,
+            detail="No employees provided to assign"
+        )
+    
+    return await ec.assign_bookings(employee_id, booking_update.assigned_employees, db)
 
 
 #delete booking(s)
-@router.patch("/{employee_id}", response_model=EmployeeResponse)
+@router.patch("/{employee_id}/remove_jobs", response_model=EmployeeResponse)
 async def remove_bookings_endpoint(employee_id: int, booking_ids: list[int], db: AsyncSession = Depends(get_db)):
     return await ec.remove_bookings(employee_id, booking_ids, db)
 
 
 #delete
-@router.delete("/{employee_id}", response_model=EmployeeResponse)
+@router.delete("/{employee_id}/delete", response_model=EmployeeResponse)
 async def delete_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
     return await ec.delete_employee(employee_id, db)

@@ -4,7 +4,7 @@ from sqlalchemy import insert, select
 from database import get_db
 from typing import Optional, List
 from models import Employee, ConfirmedBooking
-from schemas import EmployeeCreate, EmployeeResponse, EmployeeUpdate
+from schemas import EmployeeCreate, EmployeeResponse, EmployeeUpdate, ConfirmedBookingUpdate
 
 #create
 async def create_employee(employee: EmployeeCreate, db: AsyncSession):
@@ -170,7 +170,6 @@ async def remove_bookings(employee_id: int, booking_ids: list[int], db: AsyncSes
     await db.commit()
     await db.refresh(employee)
     return employee
-
 
 async def delete_employee(employee_id: int, db: AsyncSession):
     """deletes employee from the database
