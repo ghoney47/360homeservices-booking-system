@@ -59,7 +59,7 @@ async def get_job(job_id: int, db: AsyncSession = Depends(get_db)):
     """
     Docstring for get_job
     
-    :param job_id: job idz
+    :param job_id: job id
     :type job_id: int
     :param db: database connection
     :type db: AsyncSession
@@ -79,6 +79,7 @@ async def get_job(job_id: int, db: AsyncSession = Depends(get_db)):
 
     return job
 
+#update
 @router.patch("/{job_id}")
 async def update_job(job_id: int, job_update: JobCreate, db: AsyncSession = Depends(get_db)):
     stmt = select(Job).where(Job.id == job_id)
