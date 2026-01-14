@@ -2,8 +2,7 @@ from pydantic import BaseModel, EmailStr, field_validator, Field
 from datetime import datetime, date, time
 from typing import Optional, List
 from models import BookingStatus
-import phonenumbers as phone
-from phonenumbers.phonenumberutil import NumberParseException
+from utils import validators as val
 
 
 #Job Type Schemas
@@ -35,8 +34,7 @@ class EmployeeBase(BaseModel):
     """
     Docstring for EmployeeBase
     """
-    #TODO: keep?
-
+    pass
 
 class EmployeeCreate(EmployeeBase):
     """
@@ -52,38 +50,25 @@ class EmployeeCreate(EmployeeBase):
     email: EmailStr = Field(max_length=50)
 
 
-    #TODO move to validators
     @field_validator('phone_number')
-    def validate_phone_number(cls, num):
+    @classmethod
+    def validate_phone(cls, num):
         """
-        Docstring for validate_phone_number
-        
-        :param cls: class EmployeeCreate
-        :param num: string of the number input
-        raise ValueError if invalid
+        passes phone number to validator
         """
-        default_region = "US"
-
-        #parse phone number
-        parsed_phone_num = phone.parse(num, default_region)
-
-        # checks valid phone number
-        if phone.is_valid_number(parsed_phone_num):
-
-            #converting to string
-            normalized_num = phone.format_number(parsed_phone_num, phone.PhoneNumberFormat.E164)
-            return normalized_num
-        else:
-            raise ValueError("Invalid Phone Number")  
+        return val.validate_phone_number(num)
         
 class EmployeeUpdate(EmployeeBase):
-    name: Optional[str] = None
-    #TODO continue here
+    phone_number: Optional[str] = Field(max_length=15)
+    email: Optional[EmailStr] = Field(max_length=50)
 
-
-
-            
-
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone(cls, num):
+        if num is None:
+            return num
+        else: 
+            return val.validate_phone_number(num)
 
 class EmployeeResponse(EmployeeBase):
     """
@@ -98,10 +83,9 @@ class EmployeeResponse(EmployeeBase):
 
 #Address Schemas
 class AddressBase(BaseModel):
-    #TODO: is this right?
     pass
 
-class AddressCreate(BaseModel):
+class AddressCreate(AddressBase):
     """
     Docstring for AddressCreate
     street_number: string number of street
@@ -116,9 +100,11 @@ class AddressCreate(BaseModel):
     state: str = Field(max_length=2)
     zip_code: str = Field(max_length=5)
 
-#TODO addressupdate
+class AddressUpdate(AddressCreate):
+    pass
 
-class AddressResponse(BaseModel):
+
+class AddressResponse(AddressBase):
     """
     Docstring for AddressResponse
     id: integer id created by database
@@ -140,9 +126,6 @@ class ClientBase(BaseModel):
     email: EmailStr email address
     """
     name: str = Field(max_length=50)
-    phone_number: str = Field(max_length=15)
-    email: EmailStr = Field(max_length=50)
-    
 
 class ClientCreate(ClientBase):
     """
@@ -150,34 +133,32 @@ class ClientCreate(ClientBase):
     address_id: foreign key id mapped to an address
     """
     address_id: int
+    phone_number: str = Field(max_length=15)
+    email: EmailStr = Field(max_length=50)
+    
 
-    #TODO move to validators
     @field_validator('phone_number')
-    def validate_phone_number(cls, num):
+    @classmethod
+    def validate_phone(cls, number):
         """
-        Docstring for validate_phone_number
-        
-        :param cls: class EmployeeCreate
-        :param num: string of the number input
-        raise ValueError if invalid
+        passes phone number to validator
         """
-        default_region = "US"
+        return val.validate_phone_number(number)
 
-        #parse phone number
-        parsed_phone_num = phone.parse(num, default_region)
-
-        # checks valid phone number
-        if phone.is_valid_number(parsed_phone_num):
-            
-            #converting to string
-            normalized_num = phone.format_number(parsed_phone_num, phone.PhoneNumberFormat.E164)
-            return normalized_num
-        else:
-            raise ValueError("Invalid Phone Number") 
-        
 
         
-#TODO write client update schema
+class ClientUpdate(ClientBase):
+    address_id: Optional[int] #TODO higher level check for valid address/create new address
+    phone_number: Optional[str] = Field(max_length=15)
+    email: Optional[EmailStr] = Field(max_length=50)
+
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone(cls, num):
+        if num is None:
+            return num
+        else: 
+            return val.validate_phone_number(num)
 
 
 
@@ -217,6 +198,7 @@ class ConfirmedBookingCreate(ConfirmedBookingBase):
     address_id: int
     client_id: int
     assigned_employees: list[int]
+    status: BookingStatus = BookingStatus.SCHEDULED
 
     @field_validator('assigned_employees')
     def validate_assigned_employees(cls, employee_list):
@@ -232,7 +214,24 @@ class ConfirmedBookingCreate(ConfirmedBookingBase):
         
         return employee_list
     
-#TODO booking update
+class ConfirmedBookingUpdate(ConfirmedBookingBase):
+    status: BookingStatus = BookingStatus.SCHEDULED
+    assigned_employees: Optional[list[int]]
+
+    @field_validator('assigned_employees')
+    def validate_assigned_employees(cls, employee_list):
+        """
+        Docstring for validate_assigned_employees
+        
+        :param cls: ConfirmedBookingCreate class
+        :param employee_list: list of employees
+        raises ValueError if there are duplicates
+        """
+        if len(employee_list) != len(set(employee_list)):
+            raise ValueError('There are duplicate employees')
+        
+        return employee_list
+
     
 
 class ConfirmedBookingResponse(ConfirmedBookingBase):
