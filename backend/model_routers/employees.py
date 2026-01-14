@@ -29,11 +29,26 @@ async def get_all_employees_endpoint(db: AsyncSession = Depends(get_db), skip: i
 async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
     return await ec.get_employee(employee_id, db)
 
+
 #update
 @router.patch("/{employee_id}", response_model=EmployeeResponse)
 async def update_employee_endpoint(employee_update: EmployeeUpdate, employee_id: int, db: AsyncSession = Depends(get_db)):
     return await ec.update_employee(employee_update, employee_id, db)
 
-#add assigned booking(s)
+
+#assign booking(s)
+@router.patch("/{employee_id}", response_model=EmployeeResponse)
+async def assign_bookings_endpoint(employee_id: int, booking_ids: list[int], db: AsyncSession = Depends(get_db)):
+    return await ec.assign_bookings(employee_id, booking_ids, db)
+
+
+#delete booking(s)
+@router.patch("/{employee_id}", response_model=EmployeeResponse)
+async def remove_bookings_endpoint(employee_id: int, booking_ids: list[int], db: AsyncSession = Depends(get_db)):
+    return await ec.remove_bookings(employee_id, booking_ids, db)
+
 
 #delete
+@router.delete("/{employee_id}", response_model=EmployeeResponse)
+async def delete_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
+    return await ec.delete_employee(employee_id, db)
