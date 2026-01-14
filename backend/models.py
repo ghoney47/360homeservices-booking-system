@@ -55,6 +55,7 @@ class BookingStatus(en.Enum):
     COMPLETED = "completed"
     IN_PROCESS = "in_process"
     SCHEDULED = "scheduled"
+    CANCELLED = "cancelled"
 
 
 class ConfirmedBooking (Base): 

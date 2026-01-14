@@ -5,6 +5,7 @@ from database import get_db
 from typing import Optional, List
 from models import Employee
 from schemas import EmployeeCreate, EmployeeResponse, EmployeeUpdate
+from model_crud import employees_crud as ec
 
 #create router
 router = APIRouter(prefix="/employees", tags=["Employees"])
@@ -12,90 +13,26 @@ router = APIRouter(prefix="/employees", tags=["Employees"])
 
 #create
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=EmployeeResponse)
-async def create_employee(employee: EmployeeCreate, db: AsyncSession = Depends(get_db)):
-    """
-    Docstring for create_employee
-    
-    :param employee: Employee object parameters
-    :type employee: EmployeeCreate
-    :param db: Database connection
-    :type db: AsyncSession
-    
-    returns created employee
-    """
-
-    stmt = insert(Employee).values(**employee.model_dump()).returning(Employee)
-    result = await db.execute(stmt)
-    await db.commit()
-
-    new_employee = result.scalar_one()
-    return new_employee
-
+async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = Depends(get_db)):
+    return await ec.create_employee(employee, db)
 
 
 
 #get all
 @router.get("/", response_model=EmployeeResponse)
-async def get_employees(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    """
-    Docstring for get_employees
-    
-    :param skip: Offset amount (rows skipped)
-    :type skip: int
-    :param limit: Rows to be shown
-    :type limit: int
-    :param db: Database connection
-    :type db: AsyncSession
-
-    returns all employees
-    """
-    stmt = select(Employee).offset(skip).limit(limit)
-    result = await db.execute(stmt)
-
-    employees = result.scalars().all()
-    return employees
+async def get_all_employees_endpoint(db: AsyncSession = Depends(get_db), skip: int = 0, limit: int = 100):
+    return await ec.get_all_employees(db, skip, limit)
 
 
 #get one
 @router.get("/{employee_id}", response_model=EmployeeResponse)
-async def get_employee(employee_id: int, db: AsyncSession = Depends(get_db)):
-    """
-    Docstring for get_employee
-
-    employee_id: integer employee id
-    db: Database Connection
-    """
-    stmt = select(Employee).where(Employee.id == employee_id)
-    result = await db.execute(stmt)
-    employee = result.scalar_one_or_none()
-
-    if not employee:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Employee {employee_id} not found")
-    
-    return employee
+async def get_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
+    return await ec.get_employee(employee_id, db)
 
 #update
 @router.patch("/{employee_id}", response_model=EmployeeResponse)
-async def update_employee(employee_update: EmployeeUpdate, employee_id: int, db: AsyncSession = Depends(get_db)):
-    stmt = select(Employee).where(Employee.id == employee_id)
-    result = await db.execute(stmt)
-    employee = result.scalar_one_or_none()
-
-    if not employee:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Employee {employee_id} does not exist"
-        )
-
-    #updating employee
-    for k, v in employee_update.model_dump().items():
-        if v is not None:
-            setattr(employee, k, v)
-
-    db.add(employee)
-    await db.commit()
-    await db.refresh(employee)
-    return employee
+async def update_employee_endpoint(employee_update: EmployeeUpdate, employee_id: int, db: AsyncSession = Depends(get_db)):
+    return await ec.update_employee(employee_update, employee_id, db)
 
 #add assigned booking(s)
 

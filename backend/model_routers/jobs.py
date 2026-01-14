@@ -17,7 +17,7 @@ async def create_job_endpoint(job: JobCreate, db: AsyncSession = Depends(get_db)
 
 #get all
 @router.get("/", response_model=List[JobResponse])
-async def get_jobs_endpoint(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
+async def get_jobs_endpoint(db: AsyncSession = Depends(get_db), skip: int = 0, limit: int = 100):
     return await jc.get_jobs(db, skip, limit)
 
 
