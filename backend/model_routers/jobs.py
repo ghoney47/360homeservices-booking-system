@@ -10,7 +10,7 @@ from typing import List
 router = APIRouter(prefix="/jobs", tags=["Jobs"]) 
 
 #create
-@router.post("/", response_model=JobResponse, status_code= status.HTTP_201_CREATED)
+@router.post("/create", response_model=JobResponse, status_code= status.HTTP_201_CREATED)
 async def create_job_endpoint(job: JobCreate, db: AsyncSession = Depends(get_db)):
     return await jc.create_job(job, db)
   
@@ -29,12 +29,12 @@ async def get_job_endpoint(job_id: int, db: AsyncSession = Depends(get_db)):
 
 
 #update
-@router.patch("/{job_id}")
+@router.patch("/{job_id}/update")
 async def update_job_endpoint(job_id: int, job_update: JobCreate, db: AsyncSession = Depends(get_db)):
     return await jc.update_job(job_id, job_update, db)
 
 #delete 
-@router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{job_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_job_endpoint(job_id: int, db: AsyncSession = Depends(get_db)):
     return await jc.delete_job(job_id, db)
 
