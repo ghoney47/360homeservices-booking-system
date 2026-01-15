@@ -32,6 +32,8 @@ class Employee(Base):
     name: Mapped[str] = mapped_column(sa.String(50), unique=True, nullable=False) 
     phone_number: Mapped[str] = mapped_column(sa.String(15), unique=True, nullable=False) #includes country code
     email: Mapped[str] = mapped_column(sa.String(50), nullable=True, unique=True)
+    created_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), nullable=False)
+    updated_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), onupdate=sa.func.now(), nullable = True)
     hire_date: Mapped[dt.datetime] = mapped_column(sa.Date) 
     assigned_jobs: Mapped[list["ConfirmedBooking"]] = relationship(secondary=assigned_jobs, back_populates="assigned_employees")
 
@@ -80,7 +82,8 @@ class ConfirmedBooking (Base):
     end_time: Mapped[dt.time] = mapped_column(sa.Time)
     status: Mapped["BookingStatus"] = mapped_column(sa.Enum(BookingStatus), nullable = False)
     created_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), nullable=False)
-    updated_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), nullable = True)
+    updated_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), onupdate=sa.func.now(), nullable = True)
+    price: Mapped[int] = mapped_column(sa.Integer, min_value = 1) #price in cents
     def __repr__(self) -> str:
         return f"<Booking {self.id_hash} to be completed at {self.address}\nStart time: {self.start_time} and ending at {self.end_time}\nJob Status: {self.status}>"
 

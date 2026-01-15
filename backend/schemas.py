@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator, Field
 from datetime import datetime, date, time
-from typing import Optional, List
+from typing import Optional
 from models import BookingStatus
 from utils import validators as val
 
@@ -199,6 +199,25 @@ class ConfirmedBookingCreate(ConfirmedBookingBase):
     client_id: int
     assigned_employees: list[int]
     status: BookingStatus = BookingStatus.SCHEDULED
+    price: int #price in cents
+
+    @field_validator('price')
+    def validate_price(cls, price):
+        """validates price is a non-zero postive integer
+
+        Args:
+            price (int): price of job
+
+        Raises:
+            ValueError: Price must be a non-zero postive integer
+
+        Returns:
+            int: price 
+        """
+        if price <= 1:
+            raise ValueError("Price must be at least 1 cent")
+
+        return price
 
     @field_validator('assigned_employees')
     def validate_assigned_employees(cls, employee_list):
@@ -214,9 +233,11 @@ class ConfirmedBookingCreate(ConfirmedBookingBase):
         
         return employee_list
     
+    
 class ConfirmedBookingUpdate(ConfirmedBookingBase):
     status: BookingStatus = BookingStatus.SCHEDULED
     assigned_employees: Optional[list[int]]
+    price: Optional[int]
 
     @field_validator('assigned_employees')
     def validate_assigned_employees(cls, employee_list):
@@ -231,6 +252,24 @@ class ConfirmedBookingUpdate(ConfirmedBookingBase):
             raise ValueError('There are duplicate employees')
         
         return employee_list
+    
+    @field_validator('price')
+    def validate_price(cls, price):
+        """validates price is a non-zero postive integer
+
+        Args:
+            price (int): price of job
+
+        Raises:
+            ValueError: Price must be a non-zero postive integer
+
+        Returns:
+            int: price 
+        """
+        if price <= 1:
+            raise ValueError("Price must be at least 1 cent")
+
+        return price
 
     
 
