@@ -24,7 +24,7 @@ async def create_job(job: JobCreate, db: AsyncSession):
     return new_job
 
 #get all
-async def get_jobs(db: AsyncSession, skip: int = 0, limit: int = 100):
+async def get_all_jobs(db: AsyncSession, skip: int = 0, limit: int = 100):
     """
     Docstring for get_jobs
     
