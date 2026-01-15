@@ -83,7 +83,7 @@ class ConfirmedBooking (Base):
     status: Mapped["BookingStatus"] = mapped_column(sa.Enum(BookingStatus), nullable = False)
     created_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), nullable=False)
     updated_at: Mapped[dt.datetime] = mapped_column(sa.DateTime, server_default=sa.func.now(), onupdate=sa.func.now(), nullable = True)
-    price: Mapped[int] = mapped_column(sa.Integer, min_value = 1) #price in cents
+    price: Mapped[int] = mapped_column(sa.Integer) #price in cents
     def __repr__(self) -> str:
         return f"<Booking {self.id_hash} to be completed at {self.address}\nStart time: {self.start_time} and ending at {self.end_time}\nJob Status: {self.status}>"
 
