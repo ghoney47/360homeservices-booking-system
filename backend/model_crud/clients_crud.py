@@ -5,13 +5,27 @@ from typing import List
 from database import get_db
 from models import Client
 from schemas import ClientCreate, ClientUpdate, ClientResponse
+from utils.validators import address_exists
+from addresses_crud import create_address
 
 #create
 async def create_client(client: ClientCreate, db: AsyncSession):
+    
+    address_id = client.address_id
+
+    #determining if address exists
+    if not await address_exists(client.address_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Address {address_id} does not exist"
+        )
+
+
     stmt = insert(Client).values(**client.model_dump()).returning(Client)
     result = await db.execute(stmt)
 
     await db.commit()
+
     new_client = result.scalar_one_or_none()
     return new_client
 
