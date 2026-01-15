@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from database import engine, Base
 import models
 from fastapi import FastAPI
-from model_routers.api import api_router
+from model_routers.model_api import api_router
 import logging
 
 @asynccontextmanager

@@ -25,11 +25,11 @@ async def get_address_endpoint(address_id: int, db: AsyncSession = Depends(get_d
     return ac.get_address(address_id, db)
 
 #update
-@router.patch("/update/{address_id}")
+@router.patch("/update/{address_id}", response_model = AddressResponse)
 async def update_address_endpoint(up_address: AddressUpdate, address_id: int, db: AsyncSession = Depends(get_db)):
     return ac.update_address(up_address, address_id, db)
 
 #delete
-@router.patch("/delete/{address_id}")
+@router.delete("/delete/{address_id}")
 async def delete_address_endpoint(address_id: int, db: AsyncSession = Depends(get_db)):
     return ac.delete_address(address_id, db)

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import insert, select
 from database import get_db
 from model_crud import jobs_crud as jc
 from schemas import JobCreate, JobResponse

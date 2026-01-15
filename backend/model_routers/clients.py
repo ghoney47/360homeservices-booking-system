@@ -32,6 +32,6 @@ async def update_client_endpoint(up_client: ClientUpdate, client_id: int, db: As
 
 
 #delete
-@router.delete("/delete/{client_id}", response_model=ClientResponse, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/delete/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_client_endpoint(client_id: int, db: AsyncSession = Depends(get_db)):
     return cc.delete_client(client_id, db)

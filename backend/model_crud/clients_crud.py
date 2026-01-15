@@ -6,7 +6,7 @@ from database import get_db
 from models import Client
 from schemas import ClientCreate, ClientUpdate, ClientResponse
 from utils.validators import address_exists
-from addresses_crud import create_address
+
 
 #create
 async def create_client(client: ClientCreate, db: AsyncSession):
