@@ -28,12 +28,12 @@ async def get_job_endpoint(job_id: int, db: AsyncSession = Depends(get_db)):
 
 
 #update
-@router.patch("/{job_id}/update")
+@router.patch("/update/{job_id}")
 async def update_job_endpoint(job_id: int, job_update: JobCreate, db: AsyncSession = Depends(get_db)):
     return await jc.update_job(job_id, job_update, db)
 
 #delete 
-@router.delete("/{job_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/delete/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_job_endpoint(job_id: int, db: AsyncSession = Depends(get_db)):
     return await jc.delete_job(job_id, db)
 

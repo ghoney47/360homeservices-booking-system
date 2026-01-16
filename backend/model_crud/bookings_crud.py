@@ -32,7 +32,7 @@ async def create_booking(booking: ConfirmedBookingCreate, db: AsyncSession):
 
 
 #get all 
-async def get_all_bookings(db: AsyncSession, skip = 0, limit = 100):
+async def get_all_bookings(db: AsyncSession, skip: int, limit: int):
     stmt = select(ConfirmedBooking).offset(skip).limit(limit)
     result = await db.execute(stmt)
     bookings = result.scalars().all()

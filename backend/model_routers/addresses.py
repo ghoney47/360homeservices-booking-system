@@ -12,24 +12,24 @@ router = APIRouter(prefix="/addresses", tags=["Addresses"])
 #create
 @router.post("/create", response_model= AddressResponse)
 async def create_address_endpoint(address: AddressCreate, db: AsyncSession = Depends(get_db)):
-    return ac.create_address(address, db)
+    return await ac.create_address(address, db)
 
 #get all
 @router.get("/", response_model=AddressResponse)
 async def get_all_addresses_endpoint(db: AsyncSession = Depends(get_db), skip = 0, limit = 100):
-    return ac.get_all_addresses(db, skip, limit)
+    return await ac.get_all_addresses(db, skip, limit)
 
 #get one
 @router.get("/{address_id}", response_model=AddressResponse)
 async def get_address_endpoint(address_id: int, db: AsyncSession = Depends(get_db)):
-    return ac.get_address(address_id, db)
+    return await ac.get_address(address_id, db)
 
 #update
 @router.patch("/update/{address_id}", response_model = AddressResponse)
 async def update_address_endpoint(up_address: AddressUpdate, address_id: int, db: AsyncSession = Depends(get_db)):
-    return ac.update_address(up_address, address_id, db)
+    return await ac.update_address(up_address, address_id, db)
 
 #delete
 @router.delete("/delete/{address_id}")
 async def delete_address_endpoint(address_id: int, db: AsyncSession = Depends(get_db)):
-    return ac.delete_address(address_id, db)
+    return await ac.delete_address(address_id, db)
