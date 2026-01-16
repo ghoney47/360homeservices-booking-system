@@ -287,4 +287,13 @@ class ConfirmedBookingResponse(ConfirmedBookingBase):
     class Config: 
         from_attributes = True
 
+class BusinessInfoBase(BaseModel):
+    pass
+
+class BusinessInfoCreate(BusinessInfoBase):
+    total_estimates: int
+
+class BusinessInfoResponse(BusinessInfoBase):
+    id: int
+
 

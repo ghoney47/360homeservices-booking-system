@@ -13,6 +13,10 @@ metadata = Base.metadata
 #TODO check syntax overall
 #TODO better comments/documentation 
 
+class BusinessInfo(Base):
+    __tablename__ = "business information"
+    id: Mapped[int] = mapped_column(sa.Integer, primary_key=True, autoincrement=False)
+    total_estimates: Mapped[int]
 
 assigned_jobs = Table (
     "assigned_jobs",
