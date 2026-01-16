@@ -288,12 +288,20 @@ class ConfirmedBookingResponse(ConfirmedBookingBase):
         from_attributes = True
 
 class BusinessInfoBase(BaseModel):
-    pass
+    business_name: str
+    total_estimates: int
 
 class BusinessInfoCreate(BusinessInfoBase):
     total_estimates: int
 
+class BusinessInfoUpdate(BaseModel):
+    business_name: Optional[str]
+    total_estimates: Optional[int]
+
 class BusinessInfoResponse(BusinessInfoBase):
     id: int
+
+    class Config:
+        from_attributes = True
 
 
