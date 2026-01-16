@@ -1,7 +1,7 @@
 import phonenumbers as phone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from models import Address
+from models import Address, Client
 
 #phone number validator
 @staticmethod
@@ -39,6 +39,19 @@ async def address_exists(address_id: int, db: AsyncSession) -> bool:
         return False
     
     return True
+
+#client exists check in database
+@staticmethod
+async def client_exists(client_id: int, db: AsyncSession) -> bool:
+    stmt = select(Client).where(Client.id == client_id)
+    result = await db.execute(stmt)
+    address = result.scalar_one_or_none()
+
+    if not address:
+        return False
+    
+    return True
+
 
     
 #TODO zip code validator (check if valid in the us)

@@ -10,6 +10,18 @@ from utils.validators import address_exists
 
 #create
 async def create_client(client: ClientCreate, db: AsyncSession):
+    """create client object
+
+    Args:
+        client (ClientCreate): Create schema
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if address is not found
+
+    Returns:
+        Client: created client object
+    """
     
     address_id = client.address_id
 
@@ -30,7 +42,17 @@ async def create_client(client: ClientCreate, db: AsyncSession):
     return new_client
 
 #get all
-async def get_all_clients(db: AsyncSession, skip = 0, limit = 100):
+async def get_all_clients(db: AsyncSession, skip: int, limit: int):
+    """get all clients in database
+
+    Args:
+        db (AsyncSession): database connection
+        skip (int): rows skipped
+        limit (int): rows displayed
+
+    Returns:
+        Client: specified client
+    """
     stmt = select(Client).offset(skip).limit(limit)
     result = await db.execute(stmt)
     clients = result.scalars().all()
@@ -38,6 +60,18 @@ async def get_all_clients(db: AsyncSession, skip = 0, limit = 100):
 
 #get one
 async def get_client(client_id: int, db: AsyncSession):
+    """get client by id
+
+    Args:
+        client_id (int): client id
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if client does not exist
+
+    Returns:
+        Client: specified client
+    """
     stmt = select(Client).where(Client.id == client_id)
     result = await db.execute(stmt)
     client = result.scalar_one_or_none()
@@ -52,6 +86,19 @@ async def get_client(client_id: int, db: AsyncSession):
 
 #update
 async def update_client(update_client: ClientUpdate, client_id: int, db: AsyncSession):
+    """update specified client
+
+    Args:
+        update_client (ClientUpdate): update schema
+        client_id (int): client id
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if client does not exist
+
+    Returns:
+        Client: updated client
+    """
     stmt = select(Client).where(Client.id == client_id)
     result = await db.execute(stmt)
     client = result.scalar_one_or_none
@@ -74,6 +121,18 @@ async def update_client(update_client: ClientUpdate, client_id: int, db: AsyncSe
 
 #delete
 async def delete_client(client_id: int, db: AsyncSession):
+    """delete specified client 
+
+    Args:
+        client_id (int): client id
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if client does not exist
+
+    Returns:
+        None
+    """
     stmt = select(Client).where(Client.id == client_id)
     result = await db.execute(stmt)
     client = result.scalar_one_or_none()
