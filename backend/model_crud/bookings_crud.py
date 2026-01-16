@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, insert
 from typing import List
 from database import get_db
-from models import ConfirmedBooking
+from models import ConfirmedBooking, Employee
 from schemas import ConfirmedBookingCreate, ConfirmedBookingUpdate, ConfirmedBookingResponse
 from utils.validators import client_exists, address_exists
 
@@ -70,3 +70,70 @@ async def update_booking(update: ConfirmedBookingUpdate, booking_hash: str, db: 
         if v is not None:
             setattr(booking, k, v)
     
+    db.add(booking)
+    await db.commit()
+    await db.refresh(booking)
+    return booking
+
+#remove employees
+async def remove_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
+    booking = await db.get(ConfirmedBooking, booking_hash)
+
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Booking {booking_hash} not found"
+        )
+    
+    #gets all assigned employees
+    employees = [await db.get(Employee, e_id) for e_id in employee_ids]
+
+    #removes employees
+    for e in employees:
+        if e in booking.assigned_employees:
+            booking.assigned_employees.remove(e)
+
+    db.add(booking)
+    await db.commit()
+    await db.refresh(booking)
+    return booking
+
+
+#assign employees
+async def assign_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
+    booking = await db.get(ConfirmedBooking, booking_hash)
+
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Booking {booking_hash} not found"
+        )
+    
+    #gets all assigned employees
+    employees = [await db.get(Employee, e_id) for e_id in employee_ids]
+
+    #adds from booking
+    for e in employees:
+        if e not in booking.assigned_employees:
+            booking.assigned_employees.append(e)
+
+    db.add(booking)
+    await db.commit()
+    await db.refresh(booking)
+    return booking
+
+#delete
+async def delete_booking(booking_hash: str, db: AsyncSession):
+    stmt = select(ConfirmedBooking).where(ConfirmedBooking.id_hash == booking_hash)
+    result = await db.execute(stmt)
+    booking = result.scalar_one_or_none()
+
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Booking {booking_hash} not found"
+        )
+
+    await db.delete(booking)
+    await db.commit()
+    return None
