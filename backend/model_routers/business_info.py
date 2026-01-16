@@ -18,7 +18,7 @@ router = APIRouter(
 
 #create or get
 @router.put("/", response_model=BusinessInfoResponse)
-async def get_or_create_business_info_endpoint(update: BusinessInfoUpdate, db: AsyncSession = Depends(get_db))
+async def get_or_create_business_info_endpoint(update: BusinessInfoUpdate, db: AsyncSession = Depends(get_db)):
     return await bc.get_or_create_business_info(update, db)
 
 #get detailed informtion 
