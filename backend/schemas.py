@@ -304,4 +304,19 @@ class BusinessInfoResponse(BusinessInfoBase):
     class Config:
         from_attributes = True
 
+class BusinessInfoDetailedResponse(BusinessInfoBase):
+    id: int
+    total_estimates: int
+    business_name: str
+
+    class Config:
+        from_attributes = True
+
+class BusinessInfoEstimateResponse(BusinessInfoBase):
+    id: int
+    total_estimates: int
+
+    class Config:
+        from_attributes = True
+
 
