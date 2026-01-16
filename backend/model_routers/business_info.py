@@ -22,7 +22,7 @@ async def get_or_create_business_info_endpoint(update: BusinessInfoUpdate, db: A
     return await bc.get_or_create_business_info(update, db)
 
 #get detailed informtion 
-@router.put("/detailed", response_model=BusinessInfoDetailedResponse)
+@router.get("/detailed", response_model=BusinessInfoDetailedResponse)
 async def get_detailed_info_endpoint(update: BusinessInfoUpdate, db: AsyncSession = Depends(get_db)):
     return await bc.get_or_create_business_info(update, db)
 
