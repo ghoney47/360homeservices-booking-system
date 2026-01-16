@@ -1,4 +1,5 @@
 import phonenumbers as phone
+from phonenumbers import NumberParseException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models import Address, Client
@@ -8,15 +9,20 @@ from models import Address, Client
 def validate_phone_number(num):
     """
     Docstring for validate_phone_number
-    
-    :param cls: class EmployeeCreate
+
     :param num: string of the number input
     raise ValueError if invalid
     """
     default_region = "US"
 
     #parse phone number
-    parsed_phone_num = phone.parse(num, default_region)
+    try:
+        parsed_phone_num = phone.parse(num, default_region)
+    except NumberParseException:
+        raise ValueError("Invalid Phone Number") 
+    except TypeError:
+        raise ValueError("Invalid Phone Number")
+    
 
     # checks valid phone number
     if phone.is_valid_number(parsed_phone_num):
