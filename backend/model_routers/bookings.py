@@ -59,6 +59,6 @@ async def remove_employees_endpoint(update: ConfirmedBookingUpdate, booking_hash
 
 
 #delete
-@router.patch("/delete/{booking_hash}")
+@router.delete("/delete/{booking_hash}")
 async def delete_booking_endpoint(booking_hash: str, db: AsyncSession = Depends(get_db)):
     return await bc.delete_booking(booking_hash, db)
