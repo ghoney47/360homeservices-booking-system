@@ -9,6 +9,19 @@ from utils.validators import client_exists, address_exists
 
 #create
 async def create_booking(booking: ConfirmedBookingCreate, db: AsyncSession):
+    """creates ConfirmedBooking Object
+
+    Args:
+        booking (ConfirmedBookingCreate): create schema
+        db (AsyncSession): database connection  
+
+    Raises:
+        HTTPException: raises 404 if client id is not found
+        HTTPException: raises 404 if address id is not found
+
+    Returns:
+        ConfirmedBooking: new booking
+    """
     #check address and client are valid
     if not client_exists(booking.client_id, db):
         raise  HTTPException(
@@ -33,6 +46,17 @@ async def create_booking(booking: ConfirmedBookingCreate, db: AsyncSession):
 
 #get all 
 async def get_all_bookings(db: AsyncSession, skip: int, limit: int):
+    """gets all bookings in database
+
+    Args:
+        db (AsyncSession): database connection
+        skip (int): rows skipped
+        limit (int): rows shown
+
+    Returns:
+        list[ConfirmedBooking] : list of all bookings stored
+    """
+
     stmt = select(ConfirmedBooking).offset(skip).limit(limit)
     result = await db.execute(stmt)
     bookings = result.scalars().all()
@@ -41,6 +65,18 @@ async def get_all_bookings(db: AsyncSession, skip: int, limit: int):
 
 #get one
 async def get_booking(booking_hash: str, db: AsyncSession):
+    """Gets a booking based on its hash
+
+    Args:
+        booking_hash (str): hash of booking object
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if hash not found
+
+    Returns:
+        ConfirmedBooking: specified booking
+    """
     stmt = select(ConfirmedBooking).where(ConfirmedBooking.id_hash == booking_hash)
     result = await db.execute(stmt)
     booking = result.scalar_one_or_none()
@@ -55,6 +91,19 @@ async def get_booking(booking_hash: str, db: AsyncSession):
 
 #update
 async def update_booking(update: ConfirmedBookingUpdate, booking_hash: str, db: AsyncSession):
+    """updates status or price of booking
+
+    Args:
+        update (ConfirmedBookingUpdate): update schema (employee list should be null)
+        booking_hash (str): hash id of booking object
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if booking does not exist
+
+    Returns:
+        ConfirmedBooking: updated booking
+    """
     stmt = select(ConfirmedBooking).where(ConfirmedBooking.id_hash == booking_hash)
     result = await db.execute(stmt)
     booking = result.scalar_one_or_none()
@@ -77,6 +126,19 @@ async def update_booking(update: ConfirmedBookingUpdate, booking_hash: str, db: 
 
 #remove employees
 async def remove_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
+    """removes employees from a booking
+
+    Args:
+        employee_ids (list[int]): employee ids to be removed
+        booking_hash (str): booking hash id
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if the booking does not exist
+
+    Returns:
+        ConfirmedBooking: updated booking
+    """
     booking = await db.get(ConfirmedBooking, booking_hash)
 
     if not booking:
@@ -101,6 +163,20 @@ async def remove_employees(employee_ids: list[int], booking_hash: str, db: Async
 
 #assign employees
 async def assign_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
+    """assigns employees to a booking
+
+    Args:
+        employee_ids (list[int]): employee ids
+        booking_hash (str): booking hash id
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if the booking hash does not exist
+
+    Returns:
+        ConfirmedBooking: updated booking
+    """
+    
     booking = await db.get(ConfirmedBooking, booking_hash)
 
     if not booking:
@@ -124,6 +200,18 @@ async def assign_employees(employee_ids: list[int], booking_hash: str, db: Async
 
 #delete
 async def delete_booking(booking_hash: str, db: AsyncSession):
+    """deletes booking
+
+    Args:
+        booking_hash (str): booking hash
+        db (AsyncSession): database connection
+
+    Raises:
+        HTTPException: raises 404 if the hash does not exist
+
+    Returns:
+        None
+    """
     stmt = select(ConfirmedBooking).where(ConfirmedBooking.id_hash == booking_hash)
     result = await db.execute(stmt)
     booking = result.scalar_one_or_none()

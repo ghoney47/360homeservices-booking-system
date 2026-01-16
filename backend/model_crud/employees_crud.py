@@ -27,7 +27,7 @@ async def create_employee(employee: EmployeeCreate, db: AsyncSession):
     return new_employee
 
 #get all
-async def get_all_employees(db: AsyncSession, skip: int = 0, limit: int = 100):
+async def get_all_employees(skip: int, limit: int, db: AsyncSession):
     """
     Docstring for get_employees
     

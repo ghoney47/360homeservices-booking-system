@@ -15,7 +15,7 @@ async def create_client_endpoint(client: ClientCreate, db: AsyncSession = Depend
 
 #get all
 @router.get("/", response_model=List[ClientResponse])
-async def get_all_clients_endpoint(db: AsyncSession = Depends(get_db), skip = 0, limit = 100):
+async def get_all_clients_endpoint(skip: int, limit: int, db: AsyncSession = Depends(get_db)):
     return await cc.get_all_clients(db, skip, limit)
 
 

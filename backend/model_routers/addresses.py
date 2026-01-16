@@ -16,7 +16,7 @@ async def create_address_endpoint(address: AddressCreate, db: AsyncSession = Dep
 
 #get all
 @router.get("/", response_model=AddressResponse)
-async def get_all_addresses_endpoint(db: AsyncSession = Depends(get_db), skip = 0, limit = 100):
+async def get_all_addresses_endpoint(skip: int, limit: int, db: AsyncSession = Depends(get_db)):
     return await ac.get_all_addresses(db, skip, limit)
 
 #get one
