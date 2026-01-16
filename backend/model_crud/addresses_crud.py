@@ -52,7 +52,8 @@ async def update_address(update_address: AddressUpdate, address_id: int, db: Asy
 
     #updating values
     for k, v in update_address.model_dump().items():
-        setattr(address, k, v)
+        if v is not None:
+            setattr(address, k, v)
 
     db.add(address)
     await db.commit()

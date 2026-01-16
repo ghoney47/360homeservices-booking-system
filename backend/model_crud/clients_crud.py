@@ -64,7 +64,8 @@ async def update_client(update_client: ClientUpdate, client_id: int, db: AsyncSe
     
     #updating attributes
     for k, v in update_client.model_dump().items():
-        setattr(client, k, v)
+        if v is not None:
+            setattr(client, k, v)
 
     db.add(client)
     await db.commit()
