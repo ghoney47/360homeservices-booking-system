@@ -15,7 +15,7 @@ async def create_booking_endpoint(booking: ConfirmedBookingCreate, db: AsyncSess
     return await bc.create_booking(booking, db)
 
 #get all
-@router.get("/", response_model=ConfirmedBookingResponse)
+@router.get("/", response_model=List[ConfirmedBookingResponse])
 async def get_all_bookings_endpoint(skip: int, limit: int, db: AsyncSession = Depends(get_db)):
     return await bc.get_all_bookings(db, skip, limit)
 

@@ -19,7 +19,7 @@ async def create_employee_endpoint(employee: EmployeeCreate, db: AsyncSession = 
 
 
 #get all
-@router.get("/", response_model=EmployeeResponse)
+@router.get("/", response_model=List[EmployeeResponse])
 async def get_all_employees_endpoint(skip: int, limit: int, db: AsyncSession = Depends(get_db)):
     return await ec.get_all_employees(skip, limit, db)
 
