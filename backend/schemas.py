@@ -76,6 +76,7 @@ class EmployeeResponse(EmployeeBase):
     id: int that database generates
     """
     id: int
+    name: str
 
     class Config:
         from_attributes = True
@@ -168,7 +169,10 @@ class ClientResponse(ClientBase):
     Docstring for ClientResponse
     address: address linked to client
     """
+    id: int
     address: str
+    name: str
+
 
     class Config:
         from_attributes = True
