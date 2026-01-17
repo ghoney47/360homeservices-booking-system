@@ -1,34 +1,38 @@
-from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy import text
+from database import engine, Base
 import asyncio
+import logging
 
-#use only in development
-async def wipe_database(engine: AsyncEngine):
+#only database usage
+
+async def wipe_database():
     """
-    Wipes all tables in the 'public' schema of a PostgreSQL database.
-    Resets all auto-increment IDs and handles foreign keys.
+    Wipes all tables and resets sequences in the database.
+    WARNING: This will DELETE ALL DATA.
     """
     async with engine.begin() as conn:
-        # fetch all table names dynamically
+        # 1️⃣ Drop all tables
+        logging.warning("Dropping all tables...")
+        await conn.run_sync(Base.metadata.drop_all)
+
+        # 2️⃣ Recreate all tables
+        logging.warning("Recreating all tables...")
+        await conn.run_sync(Base.metadata.create_all)
+
+        # 3️⃣ Reset all sequences
+        logging.warning("Resetting sequences...")
+        # Find all sequence names automatically
         result = await conn.execute(
             text(
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public';"
+                """
+                SELECT relname FROM pg_class
+                WHERE relkind='S';  -- 'S' = sequence
+                """
             )
         )
-        tables = [row[0] for row in result.fetchall()]
-        if not tables:
-            print("No tables found.")
-            return
+        sequences = [row[0] for row in result.all()]
+        for seq in sequences:
+            await conn.execute(text(f"ALTER SEQUENCE {seq} RESTART WITH 1;"))
 
-        # truncate all tables with restart identity and cascade
-        truncate_sql = ";\n".join(
-            f'TRUNCATE TABLE "{table}" RESTART IDENTITY CASCADE' for table in tables
-        )
-        await conn.execute(text(truncate_sql))
-        print(f"Wiped tables: {tables}")
+        logging.warning("Database wiped and sequences reset successfully.")
 
-
-# Example usage with your async engine
-if __name__ == "__main__":
-    import database  # your module where engine is defined
-    asyncio.run(wipe_database(database.engine))
