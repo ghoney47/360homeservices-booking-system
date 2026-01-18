@@ -1,5 +1,5 @@
 import asyncio
-from utils.db_utils import wipe_database
+from dev_tools.db_utils import wipe_database
 
 #for dev only
 
