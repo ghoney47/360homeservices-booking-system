@@ -30,6 +30,6 @@ async def update_address_endpoint(up_address: AddressUpdate, address_id: int, db
     return await ac.update_address(up_address, address_id, db)
 
 #delete
-@router.delete("/delete/{address_id}")
+@router.delete("/delete/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_address_endpoint(address_id: int, db: AsyncSession = Depends(get_db)):
     return await ac.delete_address(address_id, db)

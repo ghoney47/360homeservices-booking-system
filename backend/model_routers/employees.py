@@ -56,6 +56,6 @@ async def remove_bookings_endpoint(employee_id: int, booking_ids: list[int], db:
 
 
 #delete
-@router.delete("/delete/{employee_id}", response_model=EmployeeResponse)
+@router.delete("/delete/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_employee_endpoint(employee_id: int, db: AsyncSession = Depends(get_db)):
     return await ec.delete_employee(employee_id, db)

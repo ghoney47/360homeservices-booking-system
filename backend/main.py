@@ -24,21 +24,6 @@ async def lifespan(app: FastAPI):
         logging.error(f"Migration failed: {e}")
         raise
     
-    # Initialize business_info if needed
-    async with engine.begin() as conn:
-        def init_business_info(sync_conn):
-            
-            session = Session(bind=sync_conn)
-            info = session.query(BusinessInfo).filter(BusinessInfo.id == 1).first()
-            
-            if not info:
-                logging.warning("Creating initial business_info row")
-                info = BusinessInfo(id=1, total_estimates=0, business_name="")
-                session.add(info)
-                session.commit()
-        
-        await conn.run_sync(init_business_info)
-    
     yield
     # Shutdown logic here
 
