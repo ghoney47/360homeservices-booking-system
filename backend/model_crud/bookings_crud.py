@@ -7,6 +7,7 @@ from models import ConfirmedBooking, Employee
 from schemas import ConfirmedBookingCreate, ConfirmedBookingUpdate, ConfirmedBookingResponse
 from utils.validators import client_exists, address_exists
 
+
 #create
 async def create_booking(booking: ConfirmedBookingCreate, db: AsyncSession):
     """creates ConfirmedBooking Object
@@ -41,6 +42,7 @@ async def create_booking(booking: ConfirmedBookingCreate, db: AsyncSession):
     await db.commit()
 
     new_booking = result.scalar_one_or_none()
+
     return new_booking
 
 
@@ -88,6 +90,7 @@ async def get_booking(booking_hash: str, db: AsyncSession):
         )
 
     return booking
+
 
 #update
 async def update_booking(update: ConfirmedBookingUpdate, booking_hash: str, db: AsyncSession):
