@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, insert
-from typing import List
+from typing import List, Annotated
+from datetime import date, time, datetime
 from database import get_db
-from models import ConfirmedBooking
 from schemas import ConfirmedBookingCreate, ConfirmedBookingUpdate, ConfirmedBookingResponse
 from model_crud import bookings_crud as bc
+from services.availability_service import get_openings
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -13,6 +13,11 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 @router.post("/create", response_model=ConfirmedBookingResponse)
 async def create_booking_endpoint(booking: ConfirmedBookingCreate, db: AsyncSession = Depends(get_db)):
     return await bc.create_booking(booking, db)
+
+@router.get("/get_openings")
+async def get_openings_endpoint(duration: int, s_date: Annotated[date, Body()], op_start: Annotated[time, Body()], op_end: Annotated[time, Body()], dead_hours_s: Annotated[time, Body()], dead_hours_e: Annotated[time, Body()], db: AsyncSession = Depends(get_db)) -> List[datetime]:
+    return await get_openings(duration, s_date, op_start, op_end, dead_hours_s, dead_hours_e, db)
+
 
 #get all
 @router.get("/", response_model=List[ConfirmedBookingResponse])
