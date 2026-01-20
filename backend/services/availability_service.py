@@ -31,7 +31,21 @@ async def get_booking_within_dates(s_date: Annotated[date, Body()], e_date: Anno
 
 
 async def get_openings(duration: int, s_date: Annotated[date, Body()], op_start: Annotated[time, Body()], op_end: Annotated[time, Body()], dead_hours_s: Annotated[time, Body()], dead_hours_e: Annotated[time, Body()], db: AsyncSession) -> List[datetime]:
+    """
+    Get a list of potential start times for a job
 
+    Args:
+        duration (int): minutes job will take
+        s_date (Annotated[date, Body): start of search date
+        op_start (Annotated[time, Body): operation hour start
+        op_end (Annotated[time, Body): operation hour end
+        dead_hours_s (Annotated[time, Body): dead hour start
+        dead_hours_e (Annotated[time, Body): dead hour end
+        db (AsyncSession): database connection
+
+    Returns:
+        List[datetime]: _description_
+    """
     two_weeks_later = s_date + timedelta(days=14)
 
     #finding bookings for the next two weeks from start
