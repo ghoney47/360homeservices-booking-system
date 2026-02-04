@@ -9,7 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 Base = db.Base
 metadata = Base.metadata
 
-#TODO how does updating work?
 #TODO check syntax overall
 #TODO better comments/documentation 
 
@@ -132,6 +131,7 @@ class Client(Base):
     name: Mapped[str] = mapped_column(sa.String(50), unique=True, nullable=False)
     phone_number: Mapped[str] = mapped_column(sa.String(15), unique=True, nullable=False) #includes country code
     email: Mapped[str] = mapped_column(sa.String(50), nullable=True, unique=True) 
+    comment: Mapped[str] = mapped_column(sa.String(750), nullable=True) #for a comment box
 
 
     confirmed_bookings: Mapped[list["ConfirmedBooking"]] = relationship(back_populates="client") 
