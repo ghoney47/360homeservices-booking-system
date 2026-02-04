@@ -136,6 +136,7 @@ class ClientCreate(ClientBase):
     address_id: int
     phone_number: str = Field(max_length=15)
     email: EmailStr = Field(max_length=50)
+    comment: Optional[str] = Field(max_length=750)
     
 
     @field_validator('phone_number')
