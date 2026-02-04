@@ -8,7 +8,9 @@ from backend.database import engine, Base
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
 #AFTER WIPE RUN THIS IN DIRECTORY OF THE DATABASE after deleting all versions of alembic
+#to run, go to the highest level of the directory and run: python3 -m dev_tools.wipe_db
 """
+delete all files in 'versions'
 alembic revision --autogenerate -m "initial tables"
 
 then 
