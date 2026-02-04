@@ -153,6 +153,7 @@ class ClientUpdate(ClientBase):
     address_id: Optional[int] #TODO higher level check for valid address/create new address
     phone_number: Optional[str] = Field(max_length=15)
     email: Optional[EmailStr] = Field(max_length=50)
+    comment: Optional[str] = Field(max_length = 750)
 
     @field_validator('phone_number')
     @classmethod
