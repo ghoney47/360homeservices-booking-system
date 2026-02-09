@@ -1,2 +1,4 @@
 asyncpg
 greenlet
+fastapi
+sqlalchemy
