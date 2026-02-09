@@ -7,8 +7,9 @@ import logging
 import subprocess
 from sqlalchemy.orm import Session
 from models import BusinessInfo
+from fastapi.middleware.cors import CORSMiddleware
 
-##TODO: need to add tie into nextjs app so it can make requests to the api
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,3 +30,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
+
+origins = [
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
