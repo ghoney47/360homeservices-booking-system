@@ -2,3 +2,4 @@ asyncpg
 greenlet
 fastapi
 sqlalchemy
+pydantic
