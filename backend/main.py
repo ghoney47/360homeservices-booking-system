@@ -8,7 +8,7 @@ import subprocess
 from sqlalchemy.orm import Session
 from models import BusinessInfo
 
-
+##TODO: need to add tie into nextjs app so it can make requests to the api
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
