@@ -31,9 +31,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
 
+# Vite port for frontend
 origins = [
-    "http://localhost:3000"
+    "http://localhost:5173",
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
