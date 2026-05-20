@@ -18,7 +18,7 @@ async def check_overlap(bookings: List[ConfirmedBooking], s_time: Annotated[time
             break
 
         #end time between a start and end time
-        if (e_time < b.end_time and e_time > b.s_time):
+        if (e_time < b.end_time and e_time > b.start_time):
             return True
         
         #start time is between a start and end time

@@ -279,17 +279,13 @@ class ConfirmedBookingUpdate(ConfirmedBookingBase):
     
 
 class ConfirmedBookingResponse(ConfirmedBookingBase):
-    """
-    Docstring for ConfirmedBookingResponse
-    created_at: time of creation
-    updated_at: time of update
-    id_hash: hash code of booking
-    """
-    created_at: datetime
-    updated_at: datetime
     id_hash: str
+    price: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    assigned_employees: list[EmployeeResponse] = []
 
-    class Config: 
+    class Config:
         from_attributes = True
 
 class BusinessInfoBase(BaseModel):

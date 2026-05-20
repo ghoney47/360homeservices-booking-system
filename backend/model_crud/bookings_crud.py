@@ -24,19 +24,24 @@ async def create_booking(booking: ConfirmedBookingCreate, db: AsyncSession):
         ConfirmedBooking: new booking
     """
     #check address and client are valid
-    if not client_exists(booking.client_id, db):
-        raise  HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+    if not await client_exists(booking.client_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Client {booking.client_id} does not exist"
         )
-    
-    if not address_exists(booking.address_id, db):
-        raise  HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+
+    if not await address_exists(booking.address_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Address {booking.address_id} does not exist"
         )
 
-    stmt = insert(ConfirmedBooking).values(**booking.model_dump()).returning(ConfirmedBooking)
+    # assigned_employees is M2M — exclude from column insert
+    import uuid
+    row_data = booking.model_dump(exclude={"assigned_employees"})
+    row_data["id_hash"] = str(uuid.uuid4())
+
+    stmt = insert(ConfirmedBooking).values(**row_data).returning(ConfirmedBooking)
     result = await db.execute(stmt)
 
     await db.commit()

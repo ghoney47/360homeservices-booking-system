@@ -1,119 +1,174 @@
-from database import get_db
-from fastapi import HTTPException, status, Body
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, insert, ScalarResult
-import sqlalchemy as sa
+import uuid
 from datetime import date, time, datetime, timedelta
-from typing import List, Annotated, Optional
-from utils.date_helpers import check_overlap
-from models import ConfirmedBooking
+from typing import List
+
+from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from models import ConfirmedBooking, Employee
+from schemas import ConfirmedBookingCreate
+from utils.validators import client_exists, address_exists
 
 
+def _times_overlap(s1: time, e1: time, s2: time, e2: time) -> bool:
+    """True if the half-open interval [s1, e1) overlaps [s2, e2)."""
+    return s1 < e2 and e1 > s2
 
-async def get_booking_within_dates(s_date: Annotated[date, Body()], e_date: Annotated[date, Body()], db: AsyncSession) -> List[ConfirmedBooking]:
-    """Gets all bookings within a certain span of time
+
+async def _bookings_on_date(target: date, db: AsyncSession) -> List[ConfirmedBooking]:
+    stmt = (
+        select(ConfirmedBooking)
+        .where(ConfirmedBooking.date == target)
+        .order_by(ConfirmedBooking.start_time)
+    )
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def _bookings_within_dates(start: date, end: date, db: AsyncSession) -> List[ConfirmedBooking]:
+    stmt = (
+        select(ConfirmedBooking)
+        .where(ConfirmedBooking.date >= start, ConfirmedBooking.date <= end)
+        .order_by(ConfirmedBooking.date, ConfirmedBooking.start_time)
+    )
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def is_slot_available(target_date: date, start_time: time, end_time: time, db: AsyncSession) -> bool:
+    """Return True if no existing booking overlaps the requested window on target_date."""
+    bookings = await _bookings_on_date(target_date, db)
+    return not any(_times_overlap(start_time, end_time, b.start_time, b.end_time) for b in bookings)
+
+
+async def get_openings(
+    duration: int,
+    start_date: date,
+    op_start: time,
+    op_end: time,
+    dead_start: time,
+    dead_end: time,
+    db: AsyncSession,
+) -> List[datetime]:
+    """Return the next 16 available start times for a job of the given duration (minutes).
 
     Args:
-        s_date (dt.date): start date
-        e_date (_type_): end date
-        db (AsyncSession): database connection
-
-    Returns:
-        List[ConfirmedBooking]: list of confirmed booking objects within the date period
+        duration:   Job length in minutes.
+        start_date: Earliest date to consider.
+        op_start:   Start of operating hours.
+        op_end:     End of operating hours.
+        dead_start: Start of the dead-hour window (no slots begin or overlap here).
+        dead_end:   End of the dead-hour window.
     """
-    stmt = select(ConfirmedBooking).where((ConfirmedBooking.date >= s_date) & 
-                                            (ConfirmedBooking.date <= e_date)) #TODO check logic here
-    result = await db.execute(stmt)
-    bookings = list(result.scalars().all())
+    search_end = start_date + timedelta(days=14)
+    booked = await _bookings_within_dates(start_date, search_end, db)
 
-    return bookings
+    openings: List[datetime] = []
+    current_date = start_date
 
+    while len(openings) < 16:
+        day_bookings = [b for b in booked if b.date == current_date]
 
-
-async def get_openings(duration: int, s_date: Annotated[date, Body()], op_start: Annotated[time, Body()], op_end: Annotated[time, Body()], dead_hours_s: Annotated[time, Body()], dead_hours_e: Annotated[time, Body()], db: AsyncSession) -> List[datetime]:
-    """
-    Get a list of potential start times for a job
-
-    Args:
-        duration (int): minutes job will take
-        s_date (Annotated[date, Body): start of search date
-        op_start (Annotated[time, Body): operation hour start
-        op_end (Annotated[time, Body): operation hour end
-        dead_hours_s (Annotated[time, Body): dead hour start
-        dead_hours_e (Annotated[time, Body): dead hour end
-        db (AsyncSession): database connection
-
-    Returns:
-        List[datetime]: _description_
-    """
-    two_weeks_later = s_date + timedelta(days=14)
-
-    #finding bookings for the next two weeks from start
-    filled_slots = await get_booking_within_dates(s_date, two_weeks_later, db) #need to do like 3 weeks past start date or smth
-
-    out = []
-
-    curr_date = s_date
-
-    #will find next 16 open slots
-    while len(out) < 16:
-            
-        for h in range(24):
-
-            curr_time = time(h, 0)
-
-            #skips iterations before operation hours
-            if curr_time < op_start:
+        for hour in range(24):
+            if time(hour, 0) < op_start:
                 continue
-
-            #moves to the next day if after operation hours 
-            if curr_time > op_end:
+            if time(hour, 0) >= op_end:
                 break
-            
-            m = 0
 
-            while m < 60:
-                trial_time = time(h, m)
-                s_dt = datetime.combine(curr_date, trial_time)
-                e_dt = s_dt + timedelta(minutes=duration)
+            minute = 0
+            while minute < 60:
+                slot_s = time(hour, minute)
+                slot_start_dt = datetime.combine(current_date, slot_s)
+                slot_end_dt = slot_start_dt + timedelta(minutes=duration)
 
-                #drops out of loop if book spans overnight
-                if e_dt.date() != curr_date:
+                if slot_end_dt.date() != current_date:
                     break
 
-                #checks if ending is within hours of operations
-                if e_dt.time() > op_end:
-                    m += duration
+                slot_e = slot_end_dt.time()
+
+                if slot_e > op_end:
+                    minute += duration
                     continue
 
-                #adds to list if there is no overlap, and does not fall withiin dead hours
-                if not await check_overlap(filled_slots, s_dt.time(), e_dt.time(), curr_date):
-                    if e_dt.time() <= dead_hours_s or s_dt.time() >= dead_hours_e:
-                        out.append(s_dt)
+                in_dead = _times_overlap(slot_s, slot_e, dead_start, dead_end)
+                conflict = any(_times_overlap(slot_s, slot_e, b.start_time, b.end_time) for b in day_bookings)
 
-                m += duration
+                if not conflict and not in_dead:
+                    openings.append(slot_start_dt)
 
-                #checks output numbers every iteration
-                if len(out) > 16:
+                minute += duration
+                if len(openings) >= 16:
                     break
-            
-            #checks output numbers every iteration
-            if len(out) > 16:
+
+            if len(openings) >= 16:
                 break
 
+        current_date += timedelta(days=1)
 
-        
-        #moves to the next day
-        curr_date += timedelta(days=1)
-    
-    return out
+    return openings
 
 
+async def book_slot(booking: ConfirmedBookingCreate, db: AsyncSession) -> ConfirmedBooking:
+    """Validate availability and create a confirmed booking.
 
+    Raises:
+        HTTP 404: client, address, or an employee ID not found.
+        HTTP 409: the requested time slot conflicts with an existing booking.
+        HTTP 422: start_time is not before end_time.
+    """
+    if not await client_exists(booking.client_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Client {booking.client_id} not found",
+        )
 
+    if not await address_exists(booking.address_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Address {booking.address_id} not found",
+        )
 
-        
+    if booking.start_time >= booking.end_time:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="start_time must be before end_time",
+        )
 
-    
-    
+    if not await is_slot_available(booking.date, booking.start_time, booking.end_time, db):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Time slot {booking.start_time}–{booking.end_time} on {booking.date} is already booked",
+        )
 
+    # Resolve employees, validating each ID
+    employees: List[Employee] = []
+    for eid in booking.assigned_employees:
+        emp = await db.get(Employee, eid)
+        if emp is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee {eid} not found",
+            )
+        employees.append(emp)
+
+    # assigned_employees is an M2M relationship, not a column — exclude it from the row data
+    row_data = booking.model_dump(exclude={"assigned_employees"})
+    row_data["id_hash"] = str(uuid.uuid4())
+
+    new_booking = ConfirmedBooking(**row_data)
+    new_booking.assigned_employees = employees
+
+    db.add(new_booking)
+    await db.commit()
+
+    # Reload with relationships eager-loaded for the response
+    stmt = (
+        select(ConfirmedBooking)
+        .options(
+            selectinload(ConfirmedBooking.assigned_employees),
+            selectinload(ConfirmedBooking.address),
+            selectinload(ConfirmedBooking.client),
+        )
+        .where(ConfirmedBooking.id_hash == new_booking.id_hash)
+    )
+    return (await db.execute(stmt)).scalar_one()
