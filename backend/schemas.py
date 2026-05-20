@@ -112,7 +112,6 @@ class AddressResponse(AddressBase):
     client: client tied to the address
     """
     id: int
-    client: str
 
     class Config:
         from_attributes = True
@@ -172,8 +171,8 @@ class ClientResponse(ClientBase):
     address: address linked to client
     """
     id: int
-    address: str
     name: str
+    address: AddressResponse
 
 
     class Config:

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, insert
+from sqlalchemy.orm import selectinload
 from typing import List
 from database import get_db
 from models import Client
@@ -33,13 +34,17 @@ async def create_client(client: ClientCreate, db: AsyncSession):
         )
 
 
-    stmt = insert(Client).values(**client.model_dump()).returning(Client)
+    stmt = insert(Client).values(**client.model_dump()).returning(Client.id)
     result = await db.execute(stmt)
-
     await db.commit()
 
-    new_client = result.scalar_one_or_none()
-    return new_client
+    new_client_id = result.scalar_one()
+
+    fetch_stmt = select(Client).options(selectinload(Client.address)).where(Client.id == new_client_id)
+    fetched = await db.execute(fetch_stmt)
+
+
+    return fetched.scalars().first()
 
 #get all
 async def get_all_clients(db: AsyncSession, skip: int, limit: int):
@@ -101,7 +106,7 @@ async def update_client(update_client: ClientUpdate, client_id: int, db: AsyncSe
     """
     stmt = select(Client).where(Client.id == client_id)
     result = await db.execute(stmt)
-    client = result.scalar_one_or_none
+    client = result.scalar_one_or_none()
 
     if not client:
         raise HTTPException(
