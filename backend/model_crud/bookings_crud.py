@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, insert
+from sqlalchemy.orm import selectinload
 from typing import List
 from database import get_db
 from models import ConfirmedBooking, Employee
@@ -122,46 +123,45 @@ async def update_booking(update: ConfirmedBookingUpdate, booking_hash: str, db: 
             detail=f"Booking {booking_hash} not found"
         )
     
-    #updating values
-    for k, v in update.model_dump().items():
+    # assigned_employees is M2M — never set via setattr; use assign/remove endpoints
+    for k, v in update.model_dump(exclude={"assigned_employees"}).items():
         if v is not None:
             setattr(booking, k, v)
-    
+
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
     return booking
 
-#remove employees
-async def remove_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
-    """removes employees from a booking
-
-    Args:
-        employee_ids (list[int]): employee ids to be removed
-        booking_hash (str): booking hash id
-        db (AsyncSession): database connection
-
-    Raises:
-        HTTPException: raises 404 if the booking does not exist
-
-    Returns:
-        ConfirmedBooking: updated booking
-    """
-    booking = await db.get(ConfirmedBooking, booking_hash)
-
+# shared helper — fetch booking with assigned_employees eager-loaded
+async def _get_booking_with_employees(booking_hash: str, db: AsyncSession) -> ConfirmedBooking:
+    stmt = (
+        select(ConfirmedBooking)
+        .options(selectinload(ConfirmedBooking.assigned_employees))
+        .where(ConfirmedBooking.id_hash == booking_hash)
+    )
+    booking = (await db.execute(stmt)).scalar_one_or_none()
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Booking {booking_hash} not found"
         )
-    
-    #gets all assigned employees
-    employees = [await db.get(Employee, e_id) for e_id in employee_ids]
+    return booking
 
-    #removes employees
-    for e in employees:
-        if e in booking.assigned_employees:
-            booking.assigned_employees.remove(e)
+
+#remove employees
+async def remove_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
+    booking = await _get_booking_with_employees(booking_hash, db)
+
+    for e_id in employee_ids:
+        emp = await db.get(Employee, e_id)
+        if emp is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee {e_id} not found"
+            )
+        if emp in booking.assigned_employees:
+            booking.assigned_employees.remove(emp)
 
     db.add(booking)
     await db.commit()
@@ -171,35 +171,17 @@ async def remove_employees(employee_ids: list[int], booking_hash: str, db: Async
 
 #assign employees
 async def assign_employees(employee_ids: list[int], booking_hash: str, db: AsyncSession):
-    """assigns employees to a booking
+    booking = await _get_booking_with_employees(booking_hash, db)
 
-    Args:
-        employee_ids (list[int]): employee ids
-        booking_hash (str): booking hash id
-        db (AsyncSession): database connection
-
-    Raises:
-        HTTPException: raises 404 if the booking hash does not exist
-
-    Returns:
-        ConfirmedBooking: updated booking
-    """
-    
-    booking = await db.get(ConfirmedBooking, booking_hash)
-
-    if not booking:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Booking {booking_hash} not found"
-        )
-    
-    #gets all assigned employees
-    employees = [await db.get(Employee, e_id) for e_id in employee_ids]
-
-    #adds from booking
-    for e in employees:
-        if e not in booking.assigned_employees:
-            booking.assigned_employees.append(e)
+    for e_id in employee_ids:
+        emp = await db.get(Employee, e_id)
+        if emp is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Employee {e_id} not found"
+            )
+        if emp not in booking.assigned_employees:
+            booking.assigned_employees.append(emp)
 
     db.add(booking)
     await db.commit()

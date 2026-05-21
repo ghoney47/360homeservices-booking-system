@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import ClientInfoConfScreen from './ClientInfoConfScreen'
 
 export interface ClientForm {
@@ -69,8 +70,15 @@ function FormField({
 }
 
 const ClientInformation = () => {
+  const location = useLocation()
+  const navigate  = useNavigate()
+  const locationState = location.state as { fromEstimate?: boolean; prefilledAddress?: Partial<ClientForm> } | null
+
   const [step, setStep] = useState<'form' | 'review' | 'success' | 'error'>('form')
-  const [formData, setForm] = useState<ClientForm>(initialFormState)
+  const [formData, setForm] = useState<ClientForm>({
+    ...initialFormState,
+    ...(locationState?.prefilledAddress ?? {}),
+  })
   const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -224,6 +232,17 @@ const ClientInformation = () => {
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-6">
+        {locationState?.fromEstimate && (
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1 text-sm text-green-700 hover:text-green-900 mb-3 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to estimate
+          </button>
+        )}
         <h1 className="text-2xl font-bold text-gray-900">New Client</h1>
         <p className="text-gray-500 text-sm mt-1">Enter the client's contact and address information.</p>
       </div>
@@ -274,7 +293,7 @@ const ClientInformation = () => {
               name="comment"
               value={formData.comment}
               onChange={handleTextChange}
-              placeholder="Gate code, dog in yard, preferred contact time…"
+              placeholder="Online, Word-of-mouth, etc"
               className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400"
             />
           </div>

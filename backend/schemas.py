@@ -197,11 +197,13 @@ class ConfirmedBookingBase(BaseModel):
 class ConfirmedBookingCreate(ConfirmedBookingBase):
     """
     address_id: integer foreign key mapped to an address
-    client: integer foreign key mapped to a client
+    client_id: integer foreign key mapped to a client
+    job_id: integer foreign key mapped to a job type
     assigned_employees: integer list of employees assigned to booking
     """
     address_id: int
     client_id: int
+    job_id: int
     assigned_employees: list[int]
     status: BookingStatus = BookingStatus.SCHEDULED
     price: int #price in cents
@@ -239,41 +241,31 @@ class ConfirmedBookingCreate(ConfirmedBookingBase):
         return employee_list
     
     
-class ConfirmedBookingUpdate(ConfirmedBookingBase):
-    status: BookingStatus = BookingStatus.SCHEDULED
-    assigned_employees: Optional[list[int]]
-    price: Optional[int]
+class ConfirmedBookingUpdate(BaseModel):
+    """All fields optional — only provided fields are applied (true PATCH behaviour)."""
+    date: Optional[date] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    status: Optional[BookingStatus] = None
+    assigned_employees: Optional[list[int]] = None
+    price: Optional[int] = None
 
     @field_validator('assigned_employees')
+    @classmethod
     def validate_assigned_employees(cls, employee_list):
-        """
-        Docstring for validate_assigned_employees
-        
-        :param cls: ConfirmedBookingCreate class
-        :param employee_list: list of employees
-        raises ValueError if there are duplicates
-        """
+        if employee_list is None:
+            return employee_list
         if len(employee_list) != len(set(employee_list)):
-            raise ValueError('There are duplicate employees')
-        
+            raise ValueError('Duplicate employees in list')
         return employee_list
-    
+
     @field_validator('price')
+    @classmethod
     def validate_price(cls, price):
-        """validates price is a non-zero postive integer
-
-        Args:
-            price (int): price of job
-
-        Raises:
-            ValueError: Price must be a non-zero postive integer
-
-        Returns:
-            int: price 
-        """
+        if price is None:
+            return price
         if price <= 1:
-            raise ValueError("Price must be at least 1 cent")
-
+            raise ValueError('Price must be at least 1 cent')
         return price
 
     
@@ -287,6 +279,23 @@ class ConfirmedBookingResponse(ConfirmedBookingBase):
 
     class Config:
         from_attributes = True
+
+# Estimate schemas
+class EstimateRequest(BaseModel):
+    street_number: str = Field(max_length=10)
+    street_name: str = Field(max_length=50)
+    city: str = Field(max_length=20)
+    state: str = Field(max_length=2)
+    zip_code: str = Field(max_length=5)
+    job_type: str          # "pwash" | "gutter_cleaning"
+    sq_ft: Optional[float] = None   # required for pwash
+
+class EstimateResponse(BaseModel):
+    address: str
+    job_type: str
+    estimated_price_cents: int
+    estimated_price_display: str   # "$X.XX"
+
 
 class BusinessInfoBase(BaseModel):
     business_name: str

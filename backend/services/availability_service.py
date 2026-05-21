@@ -7,9 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from models import ConfirmedBooking, Employee
+from models import ConfirmedBooking, BookingStatus, Employee
 from schemas import ConfirmedBookingCreate
 from utils.validators import client_exists, address_exists
+
+# Max days forward get_openings will search before giving up
+_MAX_SEARCH_DAYS = 90
 
 
 def _times_overlap(s1: time, e1: time, s2: time, e2: time) -> bool:
@@ -17,26 +20,39 @@ def _times_overlap(s1: time, e1: time, s2: time, e2: time) -> bool:
     return s1 < e2 and e1 > s2
 
 
+def _active_statuses():
+    return [BookingStatus.SCHEDULED, BookingStatus.IN_PROCESS]
+
+
 async def _bookings_on_date(target: date, db: AsyncSession) -> List[ConfirmedBooking]:
+    """Active (non-cancelled, non-completed) bookings on a given date."""
     stmt = (
         select(ConfirmedBooking)
-        .where(ConfirmedBooking.date == target)
+        .where(
+            ConfirmedBooking.date == target,
+            ConfirmedBooking.status.in_(_active_statuses()),
+        )
         .order_by(ConfirmedBooking.start_time)
     )
     return list((await db.execute(stmt)).scalars().all())
 
 
 async def _bookings_within_dates(start: date, end: date, db: AsyncSession) -> List[ConfirmedBooking]:
+    """Active bookings within a date range."""
     stmt = (
         select(ConfirmedBooking)
-        .where(ConfirmedBooking.date >= start, ConfirmedBooking.date <= end)
+        .where(
+            ConfirmedBooking.date >= start,
+            ConfirmedBooking.date <= end,
+            ConfirmedBooking.status.in_(_active_statuses()),
+        )
         .order_by(ConfirmedBooking.date, ConfirmedBooking.start_time)
     )
     return list((await db.execute(stmt)).scalars().all())
 
 
 async def is_slot_available(target_date: date, start_time: time, end_time: time, db: AsyncSession) -> bool:
-    """Return True if no existing booking overlaps the requested window on target_date."""
+    """Return True if no active booking overlaps the requested window on target_date."""
     bookings = await _bookings_on_date(target_date, db)
     return not any(_times_overlap(start_time, end_time, b.start_time, b.end_time) for b in bookings)
 
@@ -65,8 +81,17 @@ async def get_openings(
 
     openings: List[datetime] = []
     current_date = start_date
+    deadline = start_date + timedelta(days=_MAX_SEARCH_DAYS)
 
     while len(openings) < 16:
+        if current_date > deadline:
+            break  # no openings found within the search window
+
+        # Expand the cached booking list when we move past the initial window
+        if current_date > search_end:
+            search_end = current_date + timedelta(days=14)
+            booked = await _bookings_within_dates(current_date, search_end, db)
+
         day_bookings = [b for b in booked if b.date == current_date]
 
         for hour in range(24):

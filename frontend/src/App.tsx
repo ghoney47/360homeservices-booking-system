@@ -1,5 +1,6 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
 import ClientInformation from './components/ClientInformation'
+import EstimateFlow from './components/EstimateFlow'
 
 function NavBar() {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -12,12 +13,12 @@ function NavBar() {
   return (
     <nav className="bg-green-800 shadow-md">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-6">
-        <span className="text-white font-bold text-lg tracking-tight">
+        <NavLink to="/" className="text-white font-bold text-lg tracking-tight">
           LandscapePro
-        </span>
+        </NavLink>
         <div className="flex gap-2">
-          <NavLink to="/clients/new" className={linkClass}>
-            New Client
+          <NavLink to="/estimate" className={linkClass}>
+            Get Estimate
           </NavLink>
         </div>
       </div>
@@ -31,7 +32,8 @@ function App() {
       <NavBar />
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Routes>
-          <Route path="/" element={<ClientInformation />} />
+          <Route path="/" element={<EstimateFlow />} />
+          <Route path="/estimate" element={<EstimateFlow />} />
           <Route path="/clients/new" element={<ClientInformation />} />
         </Routes>
       </main>

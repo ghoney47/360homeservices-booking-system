@@ -42,11 +42,15 @@ async def increment_total_estimates(db: AsyncSession):
     info = result.scalar_one_or_none()
 
     if not info:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Business Information has not been intialized"
-        )
-    
+        # Auto-initialize if the record hasn't been seeded yet
+        stmt = insert(BusinessInfo).values(
+            id=1, total_estimates=1, business_name="LandscapePro"
+        ).returning(BusinessInfo)
+        result = await db.execute(stmt)
+        info = result.scalar_one()
+        await db.commit()
+        return info
+
     info.total_estimates += 1
     await db.commit()
     await db.refresh(info)
