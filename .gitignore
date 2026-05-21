@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Environment / secrets — NEVER commit these
+.env
+*.json.key
+*-credentials.json
+*-service-account.json
+/keys/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Alembic
+*.db
+*.sqlite
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

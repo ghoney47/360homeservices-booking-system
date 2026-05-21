@@ -6,9 +6,11 @@ from .addresses import router as addresses_router
 from .bookings import router as bookings_router
 from .business_info import router as business_info_router
 from service_routers.services import router as services_router
+from service_routers.booking_intake import router as intake_router
 
 api_router = APIRouter(prefix="/api/v1")
 
+# ── DB-backed routes (kept intact for easy pivot back) ─────────────────────────
 api_router.include_router(employees_router)
 api_router.include_router(jobs_router)
 api_router.include_router(clients_router)
@@ -16,3 +18,6 @@ api_router.include_router(addresses_router)
 api_router.include_router(bookings_router)
 api_router.include_router(business_info_router)
 api_router.include_router(services_router)
+
+# ── Sheets-backed customer intake routes ──────────────────────────────────────
+api_router.include_router(intake_router)

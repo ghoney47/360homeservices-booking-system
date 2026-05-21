@@ -455,7 +455,8 @@ export default function EstimateFlow() {
         dead_start:  DEAD_START,
         dead_end:    DEAD_END,
       })
-      const res = await fetch(`/api/v1/bookings/openings?${params}`)
+      // Sheets-backed availability endpoint
+      const res = await fetch(`/api/v1/intake/openings?${params}`)
       if (!res.ok) throw new Error(`Failed to load slots (${res.status})`)
       setSlots(await res.json())
     } catch (err: unknown) {
@@ -465,7 +466,7 @@ export default function EstimateFlow() {
     }
   }
 
-  // ── Screen 3: create booking ───────────────────────────────────
+  // ── Screen 3: create booking (Sheets intake — single request) ──
   const handleBook = async () => {
     if (!selectedSlot) return
     setError(''); setIsLoading(true)
@@ -473,53 +474,31 @@ export default function EstimateFlow() {
     const { date: slotDate, startTime, endTime } = parseSlot(selectedSlot, jobDuration)
 
     try {
-      // 1. Create address
-      const addrRes = await fetch('/api/v1/addresses/create', {
+      const bookRes = await fetch('/api/v1/intake/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name:          userName,
+          phone:         userPhone,
+          email:         userEmail,
           street_number: address.stNum,
           street_name:   address.stNam,
           city:          address.city,
           state:         address.state,
           zip_code:      address.zip,
+          job_type:      jobType,
+          date:          slotDate,
+          start_time:    startTime,
+          end_time:      endTime,
+          price_cents:   priceCents,
         }),
       })
-      if (!addrRes.ok) throw new Error(`Address error: ${addrRes.status}`)
-      const newAddr = await addrRes.json()
 
-      // 2. Create client
-      const clientRes = await fetch('/api/v1/clients/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name:         userName,
-          address_id:   newAddr.id,
-          phone_number: userPhone,
-          email:        userEmail,
-        }),
-      })
-      if (!clientRes.ok) throw new Error(`Client error: ${clientRes.status}`)
-      const newClient = await clientRes.json()
-
-      // 3. Create booking
-      // TODO: replace job_id=1 with a real job ID once job management is built
-      const bookRes = await fetch('/api/v1/bookings/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          job_id:             1,
-          address_id:         newAddr.id,
-          client_id:          newClient.id,
-          date:               slotDate,
-          start_time:         startTime,
-          end_time:           endTime,
-          status:             'scheduled',
-          price:              priceCents,
-          assigned_employees: [],
-        }),
-      })
-      if (!bookRes.ok) throw new Error(`Booking error: ${bookRes.status}`)
+      if (!bookRes.ok) {
+        let detail = `Booking error (${bookRes.status})`
+        try { detail = (await bookRes.json()).detail ?? detail } catch { /* non-JSON */ }
+        throw new Error(detail)
+      }
 
       setStep('success')
     } catch (err: unknown) {
