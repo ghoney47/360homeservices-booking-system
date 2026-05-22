@@ -1,1 +1,18 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+
+@theme {
+  /* 360 Home Services brand palette */
+  --color-brand:       #7A5CBF;   /* primary purple  — logo, buttons, accents */
+  --color-brand-dark:  #5E3FA3;   /* hover / pressed state */
+  --color-brand-light: #F0EBF8;   /* very light purple — bg tints, slot hover */
+  --color-brand-muted: #C4AEE8;   /* borders, slot hover ring */
+  --color-nav:         #0D0D0D;   /* near-black navbar */
+
+  /* Typography */
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+
+html, body {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}

@@ -14,6 +14,9 @@ build/
 *-credentials.json
 *-service-account.json
 /keys/
+backend/JSON key/
+backend/token.json
+backend/setup_oauth.py
 
 # Node
 node_modules/

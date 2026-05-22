@@ -5,9 +5,16 @@ sqlalchemy
 pydantic
 pydantic[email]
 
+# Phone number validation
+phonenumbers>=8.13.0
+
+# Rate limiting
+slowapi>=0.1.9
+
 # Google Sheets integration
 gspread>=6.0.0
 google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
 
 # Load .env files in development
 python-dotenv>=1.0.0

@@ -63,7 +63,7 @@ function FormField({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400"
+        className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent placeholder-gray-400"
       />
     </div>
   )
@@ -166,8 +166,8 @@ const ClientInformation = () => {
     return (
       <div className="max-w-xl mx-auto mt-16 text-center">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10">
-          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-14 h-14 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -175,7 +175,7 @@ const ClientInformation = () => {
           <p className="text-gray-500 text-sm mb-6">The client information has been saved successfully.</p>
           <button
             onClick={() => { setForm(initialFormState); setStep('form') }}
-            className="bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition-colors"
+            className="bg-brand text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
           >
             Add Another Client
           </button>
@@ -197,7 +197,7 @@ const ClientInformation = () => {
           <p className="text-red-500 text-sm mb-6">{error}</p>
           <button
             onClick={() => setStep('form')}
-            className="bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition-colors"
+            className="bg-brand text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
           >
             Go Back
           </button>
@@ -220,7 +220,7 @@ const ClientInformation = () => {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex-1 bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex-1 bg-brand text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Submitting…' : 'Confirm & Submit'}
           </button>
@@ -235,7 +235,7 @@ const ClientInformation = () => {
         {locationState?.fromEstimate && (
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-sm text-green-700 hover:text-green-900 mb-3 transition-colors"
+            className="flex items-center gap-1 text-sm text-brand hover:text-brand-dark mb-3 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -294,7 +294,7 @@ const ClientInformation = () => {
               value={formData.comment}
               onChange={handleTextChange}
               placeholder="Online, Word-of-mouth, etc"
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent placeholder-gray-400"
             />
           </div>
         </div>
@@ -311,7 +311,7 @@ const ClientInformation = () => {
           <button
             type="button"
             onClick={handleReview}
-            className="flex-1 bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition-colors"
+            className="flex-1 bg-brand text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
           >
             Review
           </button>

@@ -4,17 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  server:{
-    proxy:{
-      '/api':{
-      //API target
-      target: 'http://127.0.0.1:8000',
-      changeOrigin: true,
-      }
-    }
-
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
   },
-
 
   plugins: [
     tailwindcss(),
@@ -24,4 +21,11 @@ export default defineConfig({
       },
     }),
   ],
+
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/tests/setup.ts',
+    css: false,
+  },
 })

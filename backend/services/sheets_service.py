@@ -1,10 +1,20 @@
 """
 Google Sheets service — primary data layer for customer bookings.
 
-Authentication (set ONE of these env vars before starting the server):
-  GOOGLE_CREDENTIALS_PATH  — absolute path to the service-account JSON key file
-  GOOGLE_CREDENTIALS_JSON  — the full JSON content as a single-line string
-                             (useful when you can't place files on the server)
+Authentication — OAuth2 (no service-account key required):
+
+  LOCAL DEV
+    1. Set GOOGLE_CREDENTIALS_PATH to the credentials.json downloaded from
+       Google Cloud Console (OAuth 2.0 Client ID, Desktop app type).
+    2. On first run the server will open a browser tab to authorise access.
+    3. After approval a token is saved to GOOGLE_TOKEN_PATH (default: token.json
+       next to credentials.json). Subsequent runs use the saved token silently.
+
+  PRODUCTION (no browser available)
+    After completing the local dev flow once, copy the contents of the saved
+    token file and set GOOGLE_TOKEN_JSON to that JSON string in your host's
+    environment variables dashboard. The app will use the refresh token
+    automatically — no browser needed.
 
 Sheet: "Gavin's Schedule"  (ID: 1fiT_JuS_oiETo9J0M7X3_SsiqZrlpwBiYDPVd6eYHpA)
 Worksheet tab: "Bookings"  (created automatically on first write if absent)
@@ -33,14 +43,19 @@ from __future__ import annotations
 import json
 import os
 import uuid
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
+
+UTC = timezone.utc
 
 import gspread
-from google.oauth2.service_account import Credentials
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+# gspread's standard OAuth scopes — required for spreadsheet read/write
+SCOPES = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/drive",
+]
 
 SHEET_ID       = "1fiT_JuS_oiETo9J0M7X3_SsiqZrlpwBiYDPVd6eYHpA"
 WORKSHEET_NAME = "Bookings"
@@ -58,31 +73,48 @@ _ACTIVE_STATUSES = {"scheduled", "in_process"}
 # ── Auth helpers ───────────────────────────────────────────────────────────────
 
 def _get_client() -> gspread.Client:
-    """Return an authenticated gspread client.
+    """Return an authenticated gspread client via OAuth2.
 
-    Credential resolution order:
-      1. GOOGLE_CREDENTIALS_PATH  — path to service-account JSON file
-      2. GOOGLE_CREDENTIALS_JSON  — raw JSON string as env var
+    Resolution order:
+      1. GOOGLE_TOKEN_JSON  — production: full token JSON as an env-var string
+      2. GOOGLE_CREDENTIALS_PATH + GOOGLE_TOKEN_PATH — local dev browser flow
 
     Raises:
-        RuntimeError: neither credential source is configured.
+        RuntimeError: credentials not configured.
     """
-    creds_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
-    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    # ── Production path: token JSON stored as env var ──────────────────────────
+    token_json = os.getenv("GOOGLE_TOKEN_JSON")
+    if token_json:
+        from google.oauth2.credentials import Credentials as UserCredentials
+        from google.auth.transport.requests import Request
 
-    if creds_path:
-        creds = Credentials.from_service_account_file(creds_path, scopes=SCOPES)
-    elif creds_json:
-        info = json.loads(creds_json)
-        creds = Credentials.from_service_account_info(info, scopes=SCOPES)
-    else:
+        info  = json.loads(token_json)
+        creds = UserCredentials.from_authorized_user_info(info, SCOPES)
+
+        # Refresh silently if the access token has expired (refresh token handles it)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+
+        return gspread.authorize(creds)
+
+    # ── Local dev path: browser-based OAuth flow ───────────────────────────────
+    creds_path = os.getenv("GOOGLE_CREDENTIALS_PATH")
+    if not creds_path:
         raise RuntimeError(
-            "Google Sheets credentials not configured. "
-            "Set GOOGLE_CREDENTIALS_PATH (path to JSON key file) "
-            "or GOOGLE_CREDENTIALS_JSON (JSON content as string)."
+            "Google Sheets credentials not configured.\n"
+            "  Local dev  → set GOOGLE_CREDENTIALS_PATH to your credentials.json\n"
+            "  Production → set GOOGLE_TOKEN_JSON to the contents of your token file"
         )
 
-    return gspread.authorize(creds)
+    token_path = os.getenv(
+        "GOOGLE_TOKEN_PATH",
+        os.path.join(os.path.dirname(creds_path), "token.json"),
+    )
+
+    return gspread.oauth(
+        credentials_filename=creds_path,
+        authorized_user_filename=token_path,
+    )
 
 
 def _get_worksheet() -> gspread.Worksheet:
@@ -278,7 +310,7 @@ def append_booking(
             str(end_time),                              # HH:MM:SS
             round(price_cents / 100, 2),                # dollars (Sheets number)
             "scheduled",
-            datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            datetime.now(UTC).isoformat(timespec="seconds"),
         ],
         value_input_option="USER_ENTERED",
     )

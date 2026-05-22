@@ -20,8 +20,9 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 
+from limiter import limiter
 from schemas_intake import IntakeBookingRequest, IntakeBookingResponse
 from services import sheets_service as ss
 
@@ -59,7 +60,8 @@ def get_openings_endpoint(
 
 
 @router.post("/book", response_model=IntakeBookingResponse, status_code=status.HTTP_201_CREATED)
-def create_booking_endpoint(payload: IntakeBookingRequest):
+@limiter.limit("5/minute")
+def create_booking_endpoint(request: Request, payload: IntakeBookingRequest):
     """Check slot availability and write a new booking row to Google Sheets."""
     try:
         # Double-check availability server-side (the frontend already showed

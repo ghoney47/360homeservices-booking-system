@@ -4,15 +4,24 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()  # picks up backend/.env in development; no-op in production if not present
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from model_routers.model_api import api_router
+from limiter import limiter
 import logging
 
 # ── Mode switch ────────────────────────────────────────────────────────────────
-# DB_MODE=sheets  → skip Postgres/Alembic startup (Google Sheets is the store)
-# DB_MODE=postgres (default) → original behaviour
+# DB_MODE=sheets   → Google Sheets is the data store (no database needed)
+# DB_MODE=postgres → original Postgres/Alembic behaviour
 DB_MODE = os.getenv("DB_MODE", "postgres")
+
+# ── CORS ───────────────────────────────────────────────────────────────────────
+# Set ALLOWED_ORIGINS in .env as a comma-separated list of allowed origins.
+# Defaults to localhost:5173 for development.
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 
 @asynccontextmanager
@@ -36,20 +45,18 @@ async def lifespan(app: FastAPI):
         logging.warning(f"App starting in DB_MODE={DB_MODE!r} — skipping database init.")
 
     yield
-    # Shutdown logic here
 
 app = FastAPI(lifespan=lifespan)
+
+# Rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.include_router(api_router)
-
-# Vite port for frontend
-origins = [
-    "http://localhost:5173",
-]
-
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

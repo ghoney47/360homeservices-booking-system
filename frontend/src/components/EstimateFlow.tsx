@@ -56,11 +56,11 @@ function SectionLabel({ children }: { children: string }) {
 }
 
 function Field({
-  label, id, name, value, onChange, placeholder, type = 'text', required, className = '',
+  label, id, name, value, onChange, placeholder, type = 'text', required, className = '', error,
 }: {
   label: string; id: string; name: string; value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  placeholder?: string; type?: string; required?: boolean; className?: string
+  placeholder?: string; type?: string; required?: boolean; className?: string; error?: string
 }) {
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
@@ -70,11 +70,25 @@ function Field({
       <input
         id={id} type={type} name={name} value={value} onChange={onChange}
         placeholder={placeholder} required={required}
-        className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none
-                   focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400"
+        className={`rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2
+                   focus:ring-brand focus:border-transparent placeholder-gray-400 border
+                   ${error ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
       />
+      {error && <p className="text-red-500 text-xs mt-0.5">{error}</p>}
     </div>
   )
+}
+
+// ── Client-side contact validation (catches obvious errors before the network call) ──
+function validateContact(name: string, phone: string, email: string): Record<string, string> {
+  const errs: Record<string, string> = {}
+  if (name.trim().length < 2)
+    errs.name = 'Please enter your full name.'
+  if (!/^\S+@\S+\.\S+$/.test(email))
+    errs.email = 'Please enter a valid email address.'
+  if (phone.replace(/\D/g, '').length < 10)
+    errs.phone = 'Please enter a valid phone number (10+ digits).'
+  return errs
 }
 
 // ─── Screen 1: Estimate form ──────────────────────────────────────────────────
@@ -148,7 +162,7 @@ function EstimateScreen({
                 value={jobType}
                 onChange={(e) => setJobType(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
+                           focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent
                            bg-white text-gray-700"
               >
                 <option value="">Select a service…</option>
@@ -177,8 +191,8 @@ function EstimateScreen({
         <button
           onClick={onSubmit}
           disabled={isLoading}
-          className="w-full bg-green-700 text-white py-2 rounded-md text-sm font-medium
-                     hover:bg-green-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-brand text-white py-2 rounded-md text-sm font-medium
+                     hover:bg-brand-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Calculating…' : 'Get Estimate →'}
         </button>
@@ -208,16 +222,16 @@ function ResultScreen({
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
         {/* Price box */}
-        <div className="border-2 border-green-500 rounded-xl py-8 text-center">
-          <p className="text-4xl font-bold text-green-700">{priceDisplay}</p>
+        <div className="border-2 border-brand rounded-xl py-8 text-center">
+          <p className="text-4xl font-bold text-brand">{priceDisplay}</p>
           <p className="text-xs text-gray-400 mt-2">Estimated price · subject to on-site review</p>
         </div>
 
         {/* Actions */}
         <button
           onClick={onBookNow}
-          className="w-full bg-green-700 text-white py-3 rounded-md font-semibold
-                     hover:bg-green-800 transition-colors"
+          className="w-full bg-brand text-white py-3 rounded-md font-semibold
+                     hover:bg-brand-dark transition-colors"
         >
           Book Now
         </button>
@@ -247,7 +261,7 @@ function BookingScreen({
   userName, setUserName,
   userPhone, setUserPhone,
   userEmail, setUserEmail,
-  onBook, onBack, isLoading, error, jobDuration,
+  onBook, onBack, isLoading, error, jobDuration, fieldErrors,
 }: {
   slots: string[]; slotsLoading: boolean; slotsError: string
   selectedSlot: string | null; setSelectedSlot: (s: string) => void
@@ -255,6 +269,7 @@ function BookingScreen({
   userPhone: string; setUserPhone: (s: string) => void
   userEmail: string; setUserEmail: (s: string) => void
   onBook: () => void; onBack: () => void; isLoading: boolean; error: string; jobDuration: number
+  fieldErrors: Record<string, string>
 }) {
   const [page, setPage] = useState(0)
   const totalPages = Math.ceil(slots.length / SLOTS_PER_PAGE)
@@ -265,7 +280,7 @@ function BookingScreen({
       <div className="mb-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-1 text-sm text-green-700 hover:text-green-900 mb-3 transition-colors"
+          className="flex items-center gap-1 text-sm text-brand hover:text-brand-dark mb-3 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -280,11 +295,14 @@ function BookingScreen({
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
         <SectionLabel>Your Information</SectionLabel>
         <Field label="Full Name" id="userName" name="userName" value={userName}
-          onChange={(e) => setUserName(e.target.value)} placeholder="Jane Smith" required />
+          onChange={(e) => setUserName(e.target.value)} placeholder="Jane Smith" required
+          error={fieldErrors.name} />
         <Field label="Phone" id="userPhone" name="userPhone" value={userPhone}
-          onChange={(e) => setUserPhone(e.target.value)} placeholder="123-456-7890" type="tel" required />
+          onChange={(e) => setUserPhone(e.target.value)} placeholder="123-456-7890" type="tel" required
+          error={fieldErrors.phone} />
         <Field label="Email" id="userEmail" name="userEmail" value={userEmail}
-          onChange={(e) => setUserEmail(e.target.value)} placeholder="jane@example.com" type="email" required />
+          onChange={(e) => setUserEmail(e.target.value)} placeholder="jane@example.com" type="email" required
+          error={fieldErrors.email} />
       </div>
 
       {/* Time slot picker */}
@@ -315,8 +333,8 @@ function BookingScreen({
                     onClick={() => setSelectedSlot(iso)}
                     className={`text-xs text-center px-2 py-3 rounded-lg border transition-colors leading-snug
                       ${isSelected
-                        ? 'bg-green-700 text-white border-green-700 font-semibold'
-                        : 'border-gray-200 text-gray-700 hover:border-green-400 hover:bg-green-50'
+                        ? 'bg-brand text-white border-brand font-semibold'
+                        : 'border-gray-200 text-gray-700 hover:border-brand-muted hover:bg-brand-light'
                       }`}
                   >
                     {display.split('  ·  ').map((part, i) => (
@@ -356,8 +374,8 @@ function BookingScreen({
       <button
         onClick={onBook}
         disabled={isLoading || !selectedSlot || !userName || !userPhone || !userEmail}
-        className="w-full bg-green-700 text-white py-3 rounded-md font-semibold
-                   hover:bg-green-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full bg-brand text-white py-3 rounded-md font-semibold
+                   hover:bg-brand-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {isLoading ? 'Booking…' : 'Book Now'}
       </button>
@@ -392,6 +410,7 @@ export default function EstimateFlow() {
   const [userName, setUserName]         = useState('')
   const [userPhone, setUserPhone]       = useState('')
   const [userEmail, setUserEmail]       = useState('')
+  const [fieldErrors, setFieldErrors]   = useState<Record<string, string>>({})
 
   // ── Screen 1: get estimate ─────────────────────────────────────
   const handleGetEstimate = async () => {
@@ -469,6 +488,11 @@ export default function EstimateFlow() {
   // ── Screen 3: create booking (Sheets intake — single request) ──
   const handleBook = async () => {
     if (!selectedSlot) return
+
+    // Client-side field validation before hitting the network
+    const errs = validateContact(userName, userPhone, userEmail)
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return }
+    setFieldErrors({})
     setError(''); setIsLoading(true)
 
     const { date: slotDate, startTime, endTime } = parseSlot(selectedSlot, jobDuration)
@@ -513,8 +537,8 @@ export default function EstimateFlow() {
     return (
       <div className="max-w-xl mx-auto mt-16 text-center">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10">
-          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-14 h-14 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -524,7 +548,7 @@ export default function EstimateFlow() {
           </p>
           <button
             onClick={() => { setStep('estimate'); setAddress({ stNum:'',stNam:'',city:'',state:'',zip:'' }); setJobType(''); setSqFt(''); setSelectedSlot(null) }}
-            className="bg-green-700 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-800 transition-colors"
+            className="bg-brand text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
           >
             New Estimate
           </button>
@@ -573,6 +597,7 @@ export default function EstimateFlow() {
           userPhone={userPhone} setUserPhone={setUserPhone}
           userEmail={userEmail} setUserEmail={setUserEmail}
           onBook={handleBook} onBack={() => setStep('result')} isLoading={isLoading} error={error} jobDuration={jobDuration}
+          fieldErrors={fieldErrors}
         />
       )}
     </>
