@@ -20,8 +20,29 @@ def estimate_powerwash(sq_ft: float, rate_per_sqft_cents: int = 15) -> int:
     return math.ceil(sq_ft * rate_per_sqft_cents)
 
 
-# --- Gutter Cleaning Estimator ---
-# TODO: determine pricing method (e.g. linear ft of gutter, number of downspouts,
-#       flat rate by home size tier, or time-and-materials). Add implementation once decided.
-def estimate_gutter_cleaning() -> int:
-    raise NotImplementedError("Gutter cleaning estimator not yet implemented")
+
+def estimate_gutter_cleaning(
+    perimeter_ft: float,
+    num_floors: int,
+    rate_per_linear_ft_cents: int = 150, #GUTTER CLEANING PRICE ADJUSTMENT
+) -> int:
+    """Estimate gutter cleaning cost from building perimeter and number of floors.
+
+    Args:
+        perimeter_ft: Building perimeter in linear feet (derived from satellite footprint).
+        num_floors: Number of stories on the home.
+        rate_per_linear_ft_cents: Price per linear foot of gutter in cents (default $0.75/ft).
+
+    Returns:
+        Estimated price in cents, rounded up to the nearest cent.
+
+    Raises:
+        ValueError: If perimeter_ft or num_floors is invalid.
+    """
+    if perimeter_ft <= 0:
+        raise ValueError("perimeter_ft must be a positive number")
+    if num_floors < 1:
+        raise ValueError("num_floors must be at least 1")
+
+    linear_ft = perimeter_ft * num_floors
+    return math.ceil(linear_ft * rate_per_linear_ft_cents)

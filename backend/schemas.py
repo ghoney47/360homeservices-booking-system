@@ -288,7 +288,8 @@ class EstimateRequest(BaseModel):
     state: str = Field(max_length=2)
     zip_code: str = Field(max_length=5)
     job_type: str          # "pwash" | "gutter_cleaning"
-    sq_ft: Optional[float] = None   # required for pwash
+    sq_ft: Optional[float] = None        # required for pwash
+    num_floors: Optional[int] = None     # required for gutter_cleaning
 
 class EstimateResponse(BaseModel):
     address: str
