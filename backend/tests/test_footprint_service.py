@@ -89,19 +89,38 @@ class TestGetBuildingPerimeterFt:
                 await get_building_perimeter_ft("123 Maple Ave, Springfield, IL 62701")
 
     @pytest.mark.asyncio
-    async def test_raises_on_timeout_not_500(self):
-        """Timeout must surface as ValueError (→ 422), not propagate as a 500."""
+    async def test_raises_on_geocode_timeout_not_500(self):
+        """Geocoding timeout must surface as ValueError (→ 422), not propagate as 500."""
         with patch("httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value.__aenter__.return_value = mock_client
             mock_client.get.side_effect = httpx.ReadTimeout("timed out", request=None)
 
-            with pytest.raises(ValueError, match="timed out"):
+            with pytest.raises(ValueError, match="Geocoding timed out"):
                 await get_building_perimeter_ft("123 Maple Ave, Springfield, IL 62701")
 
     @pytest.mark.asyncio
-    async def test_raises_on_http_status_error_not_500(self):
-        """HTTP 429 / 503 from geocoder must surface as ValueError (→ 422), not 500."""
+    async def test_raises_on_geocode_406_not_500(self):
+        """HTTP 406 from Nominatim (bad User-Agent) must surface as ValueError, not 500."""
+        mock_request = MagicMock()
+        mock_response = MagicMock(spec=httpx.Response)
+        mock_response.status_code = 406
+
+        with patch("httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_cls.return_value.__aenter__.return_value = mock_client
+            mock_client.get.side_effect = httpx.HTTPStatusError(
+                "406 Not Acceptable",
+                request=mock_request,
+                response=mock_response,
+            )
+
+            with pytest.raises(ValueError, match="406"):
+                await get_building_perimeter_ft("310 Pasco DR NE, Renton, WA 98059")
+
+    @pytest.mark.asyncio
+    async def test_raises_on_overpass_error_not_500(self):
+        """HTTP error from Overpass must be labelled as Overpass error, not geocoding."""
         mock_request = MagicMock()
         mock_response = MagicMock(spec=httpx.Response)
         mock_response.status_code = 429
@@ -109,13 +128,14 @@ class TestGetBuildingPerimeterFt:
         with patch("httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             mock_cls.return_value.__aenter__.return_value = mock_client
-            mock_client.get.side_effect = httpx.HTTPStatusError(
+            mock_client.get.return_value = _nominatim_response()
+            mock_client.post.side_effect = httpx.HTTPStatusError(
                 "429 Too Many Requests",
                 request=mock_request,
                 response=mock_response,
             )
 
-            with pytest.raises(ValueError, match="429"):
+            with pytest.raises(ValueError, match="Overpass"):
                 await get_building_perimeter_ft("123 Maple Ave, Springfield, IL 62701")
 
     @pytest.mark.asyncio
