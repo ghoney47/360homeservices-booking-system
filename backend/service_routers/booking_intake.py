@@ -30,7 +30,9 @@ router = APIRouter(prefix="/intake", tags=["Booking Intake (Sheets)"])
 
 
 @router.get("/openings", response_model=List[datetime])
+@limiter.limit("30/minute")
 def get_openings_endpoint(
+    request: Request,
     duration:   int,
     start_date: date,
     op_start:   time,

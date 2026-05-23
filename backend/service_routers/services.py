@@ -1,17 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from database import get_db
+from fastapi import APIRouter, HTTPException, Request, status
 from schemas import EstimateRequest, EstimateResponse
 from services.pricing_service import estimate_powerwash, estimate_gutter_cleaning
 from services.footprint_service import get_building_perimeter_ft
-from model_crud.business_info_crud import increment_total_estimates
+from limiter import limiter
 
 router = APIRouter(prefix="/services", tags=["Services"])
 
 
 @router.post("/estimate", response_model=EstimateResponse, status_code=status.HTTP_200_OK)
-async def get_estimate_endpoint(req: EstimateRequest, db: AsyncSession = Depends(get_db)):
-    """Calculate a price estimate and increment the business estimate counter."""
+@limiter.limit("10/minute")
+async def get_estimate_endpoint(request: Request, req: EstimateRequest):
+    """Calculate a price estimate."""
 
     address = f"{req.street_number} {req.street_name}, {req.city}, {req.state} {req.zip_code}"
 
@@ -44,7 +43,8 @@ async def get_estimate_endpoint(req: EstimateRequest, db: AsyncSession = Depends
             detail=f"Unknown job type: '{req.job_type}'",
         )
 
-    await increment_total_estimates(db)
+    # Sheets deployment — estimate counter skipped (DB_MODE=sheets, no database).
+    # await increment_total_estimates(db)
 
     return EstimateResponse(
         address=address,

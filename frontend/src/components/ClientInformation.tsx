@@ -107,8 +107,9 @@ const ClientInformation = () => {
     const address = `${addrStNum} ${addrStNam} ${addrCity}, ${addrState} ${addrZip}`
 
     try {
-      // Send to Homebase360 CRM (temporary — will be replaced by proprietary CMS)
-      await fetch('https://us-central1-homebase-360.cloudfunctions.net/api/v1/customers', {
+      // Fire-and-forget: sync to Homebase360 CRM (temporary — will be replaced by proprietary CMS).
+      // Failures are logged but do NOT block the local record creation.
+      fetch('https://us-central1-homebase-360.cloudfunctions.net/api/v1/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -120,7 +121,9 @@ const ClientInformation = () => {
           notes: comment,
           notifications: true,
         }),
-      })
+      }).then((r) => {
+        if (!r.ok) console.warn('Homebase360 sync failed:', r.status)
+      }).catch((e) => console.warn('Homebase360 sync error:', e))
 
       // Create address record
       const addressResponse = await fetch('/api/v1/addresses/create', {

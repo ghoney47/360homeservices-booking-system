@@ -1,7 +1,8 @@
 import math
 
 
-def estimate_powerwash(sq_ft: float, rate_per_sqft_cents: int = 15) -> int:
+def estimate_powerwash(sq_ft: float, rate_per_sqft_cents: int = 35 #POWER WASH PRICE ADJUSTMENT
+                       ) -> int:
     """Estimate powerwashing cost based on square footage.
 
     Args:

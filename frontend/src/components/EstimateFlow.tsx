@@ -94,7 +94,7 @@ function validateContact(name: string, phone: string, email: string): Record<str
 // ─── Screen 1: Estimate form ──────────────────────────────────────────────────
 function EstimateScreen({
   address, setAddress, jobType, setJobType, sqFt, setSqFt,
-  onSubmit, error, isLoading,
+  numFloors, setNumFloors, onSubmit, error, isLoading,
 }: {
   address: AddressFields
   setAddress: (a: AddressFields) => void
@@ -102,6 +102,8 @@ function EstimateScreen({
   setJobType: (j: string) => void
   sqFt: string
   setSqFt: (s: string) => void
+  numFloors: string
+  setNumFloors: (s: string) => void
   onSubmit: () => void
   error: string
   isLoading: boolean
@@ -139,18 +141,9 @@ function EstimateScreen({
           </div>
         </div>
 
-        {/* Service Details — placeholder banner */}
+        {/* Service Details */}
         <div>
           <SectionLabel>Service Details</SectionLabel>
-
-          <div className="mb-3 flex items-start gap-2 bg-amber-50 border border-amber-200
-                          rounded-lg px-3 py-2 text-xs text-amber-800">
-            <span className="mt-0.5 text-amber-500 font-bold">⚠</span>
-            <span>
-              <strong>Placeholder — pricing method not yet finalized.</strong>{' '}
-              These inputs will change before production. Do not use for official quotes.
-            </span>
-          </div>
 
           <div className="space-y-3">
             <div className="flex flex-col gap-1">
@@ -167,21 +160,41 @@ function EstimateScreen({
               >
                 <option value="">Select a service…</option>
                 <option value="pwash">Pressure Washing</option>
-                <option value="gutter_cleaning" disabled>
-                  Gutter Cleaning (estimator coming soon)
-                </option>
+                <option value="gutter_cleaning">Gutter Cleaning</option>
               </select>
             </div>
 
             {jobType === 'pwash' && (
-              <Field
-                label="Approximate Square Footage (placeholder)"
-                id="sqFt" name="sqFt" value={sqFt}
-                onChange={(e) => setSqFt(e.target.value)}
-                placeholder="e.g. 1200"
-                type="number"
-                required
-              />
+              <div className="flex flex-col gap-1">
+                <Field
+                  label="Approximate Square Footage"
+                  id="sqFt" name="sqFt" value={sqFt}
+                  onChange={(e) => setSqFt(e.target.value)}
+                  placeholder="e.g. 1200"
+                  type="number"
+                  required
+                />
+                <p className="text-xs text-gray-400 mt-0.5">
+                  This estimate is based on the square footage you provide. If the actual area
+                  measured on-site differs, the final price may be adjusted accordingly.
+                </p>
+              </div>
+            )}
+
+            {jobType === 'gutter_cleaning' && (
+              <div className="flex flex-col gap-1">
+                <Field
+                  label="Number of Floors"
+                  id="numFloors" name="numFloors" value={numFloors}
+                  onChange={(e) => setNumFloors(e.target.value)}
+                  placeholder="e.g. 2"
+                  type="number"
+                  required
+                />
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Building footprint is looked up automatically from your address.
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -396,6 +409,7 @@ export default function EstimateFlow() {
   const [address, setAddress] = useState<AddressFields>({ stNum: '', stNam: '', city: '', state: '', zip: '' })
   const [jobType, setJobType] = useState('')
   const [sqFt, setSqFt]       = useState('')
+  const [numFloors, setNumFloors] = useState('')
 
   // Screen 2
   const [priceDisplay, setPriceDisplay]   = useState('')
@@ -421,6 +435,9 @@ export default function EstimateFlow() {
     if (jobType === 'pwash' && !sqFt) {
       setError('Please enter the square footage.'); return
     }
+    if (jobType === 'gutter_cleaning' && !numFloors) {
+      setError('Please enter the number of floors.'); return
+    }
 
     setError(''); setIsLoading(true)
 
@@ -430,12 +447,13 @@ export default function EstimateFlow() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           street_number: stNum,
-          street_name: stNam,
+          street_name:   stNam,
           city,
           state,
-          zip_code: zip,
-          job_type: jobType,
-          sq_ft: sqFt ? parseFloat(sqFt) : null,
+          zip_code:   zip,
+          job_type:   jobType,
+          sq_ft:      jobType === 'pwash' ? parseFloat(sqFt) : null,
+          num_floors: jobType === 'gutter_cleaning' ? parseInt(numFloors) : null,
         }),
       })
       if (!res.ok) {
@@ -547,7 +565,7 @@ export default function EstimateFlow() {
             We've got you on the schedule. We'll be in touch to confirm the details.
           </p>
           <button
-            onClick={() => { setStep('estimate'); setAddress({ stNum:'',stNam:'',city:'',state:'',zip:'' }); setJobType(''); setSqFt(''); setSelectedSlot(null) }}
+            onClick={() => { setStep('estimate'); setAddress({ stNum:'',stNam:'',city:'',state:'',zip:'' }); setJobType(''); setSqFt(''); setNumFloors(''); setSelectedSlot(null) }}
             className="bg-brand text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-brand-dark transition-colors"
           >
             New Estimate
@@ -564,6 +582,7 @@ export default function EstimateFlow() {
           address={address} setAddress={setAddress}
           jobType={jobType} setJobType={setJobType}
           sqFt={sqFt} setSqFt={setSqFt}
+          numFloors={numFloors} setNumFloors={setNumFloors}
           onSubmit={handleGetEstimate} error={error} isLoading={isLoading}
         />
       )}

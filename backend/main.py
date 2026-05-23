@@ -46,7 +46,13 @@ async def lifespan(app: FastAPI):
 
     yield
 
-app = FastAPI(lifespan=lifespan)
+# API docs disabled by default. Set ENABLE_DOCS=true in dev to re-enable.
+_enable_docs = os.getenv("ENABLE_DOCS", "false").lower() == "true"
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/docs" if _enable_docs else None,
+    redoc_url="/redoc" if _enable_docs else None,
+)
 
 # Rate limiter
 app.state.limiter = limiter

@@ -44,7 +44,7 @@ async def increment_total_estimates(db: AsyncSession):
     if not info:
         # Auto-initialize if the record hasn't been seeded yet
         stmt = insert(BusinessInfo).values(
-            id=1, total_estimates=1, business_name="LandscapePro"
+            id=1, total_estimates=1, business_name="360 Home Services"
         ).returning(BusinessInfo)
         result = await db.execute(stmt)
         info = result.scalar_one()
